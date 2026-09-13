@@ -5,6 +5,7 @@ import {
   listLocalStores,
   updateLocalStore,
 } from '@/lib/local-store-repository';
+import { startLocalShoppingSession } from '@/lib/local-shopping-session-repository';
 
 const input = {
   name: 'Carrefour',
@@ -37,5 +38,13 @@ describe('local store repository', () => {
     expect(() =>
       createLocalStore('guest-a', { ...input, name: '  carrefour  ' }),
     ).toThrow('DUPLICATE_STORE');
+  });
+
+  it('protects a store referenced by a local shopping session', () => {
+    const store = createLocalStore('guest-a', input);
+    startLocalShoppingSession('guest-a', store.id);
+    expect(() => deleteLocalStore('guest-a', store.id)).toThrow(
+      'STORE_REFERENCED',
+    );
   });
 });

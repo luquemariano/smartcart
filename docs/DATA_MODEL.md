@@ -37,7 +37,11 @@ Cantidad y unidad se guardan separadas. La cantidad acepta hasta cuatro decimale
 
 ### ShoppingSession
 
-Compra en curso o finalizada. Obligatorios: `id`, estado (`active`, `completed`, eventualmente `cancelled`), moneda, timestamps y origen (`guest`/`account`). Para usuario registrado: `owner_user_id`; para invitado: `local_session_id` fuera de la base o identificador de migración controlado. Nullable: `store_id`, `budget_amount`, `started_at`, `completed_at`, notas y total materializado.
+Compra concreta en curso o finalizada. En PostgreSQL F5: `id`, `owner_user_id`, `status`, `started_at`, `created_at` y `updated_at`; `status` es un enum pequeño con `active` y `completed`. Nullable: `store_id` y `finished_at`. Las fechas se almacenan como `timestamp with time zone` en UTC.
+
+`store_id` tiene FK a `stores.id` con `ON DELETE RESTRICT`. La aplicación valida además que el Store pertenezca al mismo `owner_user_id`; no es válido asociar una sesión de A a un Store de B. Un índice único parcial sobre `owner_user_id WHERE status = 'active'` garantiza como máximo una sesión activa por usuario. Una segunda solicitud de inicio devuelve conflicto 409. No existe todavía relación con Product ni ShoppingItem.
+
+Para invitados, la sesión se guarda en `localStorage` bajo `smartcart_guest_shopping_sessions_v1:<guestId>`, con el mismo estado y fechas ISO UTC. El repositorio permite una sesión activa, finalización idempotente, historial básico y futura limpieza explícita; no crea filas PostgreSQL.
 
 ### ShoppingItem
 
@@ -57,7 +61,7 @@ Producto esperado en una lista. Obligatorios: `id`, `shopping_list_id`, nombre o
 
 ## 3. Relaciones
 
-`User 1—N Store`, `User 1—N Product`, `User 1—N ShoppingSession`, `ShoppingSession 1—N ShoppingItem`, `User 1—N PriceObservation`, `Store 1—N PriceObservation`, `Product 1—N PriceObservation`, `User 1—N ShoppingList` y `ShoppingList 1—N ShoppingListItem`. `ShoppingItem` y `ShoppingListItem` pueden apuntar a `Product`, pero deben conservar snapshot suficiente cuando el producto sea manual o cambie.
+`User 1—N Store`, `User 1—N Product`, `User 1—N ShoppingSession`, `Store 1—N ShoppingSession`, `ShoppingSession 1—N ShoppingItem`, `User 1—N PriceObservation`, `Store 1—N PriceObservation`, `Product 1—N PriceObservation`, `User 1—N ShoppingList` y `ShoppingList 1—N ShoppingListItem`. `ShoppingItem` y `ShoppingListItem` pueden apuntar a `Product`, pero deben conservar snapshot suficiente cuando el producto sea manual o cambie.
 
 ## 4. Integridad y cálculos
 

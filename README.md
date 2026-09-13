@@ -1,6 +1,6 @@
 # SmartCart
 
-SmartCart es un asistente personal de compras que busca ayudar a saber cuánto se lleva gastado antes de llegar a la caja. El proyecto se encuentra en **F4 — Productos**; todavía no contiene precios, carrito ni sesión de compra.
+SmartCart es un asistente personal de compras que busca ayudar a saber cuánto se lleva gastado antes de llegar a la caja. El proyecto se encuentra en **F5 — Sesión de compra**; todavía no contiene productos dentro de la compra ni precios.
 
 ## Requisitos
 
@@ -17,7 +17,7 @@ npm run dev
 
 Copiar `.env.example` a `.env.local` si se va a usar PostgreSQL local y generar un secret con `openssl rand -base64 32`. Abrir `http://localhost:3000`. La ruta técnica `http://localhost:3000/api/health` debe devolver `{"status":"ok"}`.
 
-La pantalla permite continuar con Google cuando ambas credenciales existen, entrar/registrarse con email o usar un invitado local. Luego permite administrar supermercados y un catálogo personal de productos: las cuentas usan PostgreSQL mediante `/api/stores` y `/api/products`, y los invitados usan `localStorage` versionado aislado por guest ID. Sin `BETTER_AUTH_SECRET`, el desarrollo usa un valor explícitamente no productivo; producción falla al iniciar para evitar una configuración insegura.
+La pantalla permite continuar con Google cuando ambas credenciales existen, entrar/registrarse con email o usar un invitado local. Luego permite administrar supermercados, un catálogo personal de productos y una sesión de compra: las cuentas usan PostgreSQL mediante `/api/stores`, `/api/products` y `/api/shopping-sessions`; los invitados usan `localStorage` versionado aislado por guest ID. Sin `BETTER_AUTH_SECRET`, el desarrollo usa un valor explícitamente no productivo; producción falla al iniciar para evitar una configuración insegura.
 
 ## Ejecución con Docker
 
@@ -44,7 +44,7 @@ npm run db:generate
 npm run db:migrate
 ```
 
-Los tests cubren identidad local, estados de acceso, formulario email, supermercados, productos guest, validación, barcode, conversiones exactas y UI de listado/alta/búsqueda/selección. El CRUD autenticado, búsqueda y aislamiento entre usuarios se verifican contra PostgreSQL en Docker. No se intenta probar OAuth real.
+Los tests cubren identidad local, estados de acceso, formulario email, supermercados, productos guest, validación, barcode, conversiones exactas, sesiones guest y UI de listado/alta/búsqueda/selección/inicio/finalización. El CRUD autenticado, búsqueda, sesiones, aislamiento entre usuarios y protección de Store referenciado se verifican contra PostgreSQL en Docker. No se intenta probar OAuth real.
 
 Para crear y aplicar migraciones del dominio: `npm run db:generate` y `npm run db:migrate`. En Docker, ejecutar `docker compose --profile tools run --rm domain-migrate`; PostgreSQL permanece en la red interna y no expone un puerto al host.
 

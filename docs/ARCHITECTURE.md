@@ -37,7 +37,11 @@ Mientras una cuenta se autentica, el guest ID no se elimina automáticamente. `g
 
 Los supermercados autenticados usan `/api/stores` y `/api/stores/:id`. Cada operación filtra por `owner_user_id` derivado de la sesión. Los supermercados se eliminan físicamente en F3; cuando exista historial se deberá evaluar archivo o baja lógica para preservar referencias.
 
-Los productos autenticados usan `/api/products` y `/api/products/:id`, con búsqueda opcional `?q=`. El catálogo es personal, no global: cada operación filtra por `owner_user_id`. En F4 se evita la relación con Store, ShoppingSession, ShoppingItem o PriceObservation. La baja física es aceptable mientras no existan referencias históricas.
+Los productos autenticados usan `/api/products` y `/api/products/:id`, con búsqueda opcional `?q=`. El catálogo es personal, no global: cada operación filtra por `owner_user_id`. En F4 se evitó la relación con Store, ShoppingSession, ShoppingItem o PriceObservation.
+
+Las sesiones autenticadas usan `/api/shopping-sessions`, `/active` y `/:id`. `store_id` es nullable y, cuando se informa, el servidor verifica que el Store pertenezca al mismo usuario. PostgreSQL aplica una FK `RESTRICT` y un índice único parcial para impedir más de una sesión `active` por propietario. F5 no relaciona todavía sesiones con productos ni precios.
+
+La eliminación de Store ahora se rechaza cuando existe una sesión asociada, incluso si está `completed`; esto conserva el contexto para el futuro historial sin introducir soft delete prematuramente.
 
 Los helpers server-side obtienen la sesión desde los headers de la request con `auth.api.getSession`. Ningún recurso futuro puede autorizarse con un `userId` recibido del navegador: el propietario debe derivarse de la sesión validada en servidor.
 
@@ -45,7 +49,7 @@ Los helpers server-side obtienen la sesión desde los headers de la request con 
 
 El diseño separa el estado editable de una compra del proceso de sincronización. En una evolución posterior, una cola local de operaciones con identificadores idempotentes podrá reintentar altas, cambios y eliminaciones cuando vuelva la conectividad. El servidor necesitará timestamps/versiones y reglas de conflicto.
 
-F0 fijó el contrato conceptual; F2 añadió identidad, F3 supermercados y F4 catálogo personal de productos. No se implementa aún el service worker ni la sincronización completa.
+F0 fijó el contrato conceptual; F2 añadió identidad, F3 supermercados, F4 catálogo personal de productos y F5 sesiones vacías. No se implementa aún el service worker ni la sincronización completa.
 
 ## 7. Dinero, privacidad e imágenes
 

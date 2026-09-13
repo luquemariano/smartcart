@@ -1,6 +1,6 @@
 # SmartCart — Roadmap
 
-Las fases son pequeñas y verificables. F4 es la fase actual completada; ninguna fase posterior se considera implementada por existir en este documento.
+Las fases son pequeñas y verificables. F5 es la fase actual completada; ninguna fase posterior se considera implementada por existir en este documento.
 
 ## F0 — Foundation
 
@@ -59,10 +59,11 @@ Las fases son pequeñas y verificables. F4 es la fase actual completada; ninguna
 
 ## F5 — Sesión de compra
 
+- **Estado:** completada.
 - **Objetivo:** iniciar y mantener una compra.
-- **Entregables:** estados, supermercado opcional, sesión local/remota y recuperación básica.
+- **Entregables:** modelo `shopping_sessions`, estados `active/completed`, Store opcional con FK `RESTRICT`, índice único parcial de una sesión activa por usuario, API autenticada de inicio/consulta/listado/finalización, repositorio guest local e interfaz de restauración/finalización.
 - **Dependencias:** F3, F4.
-- **Cierre:** una sesión se crea y retoma sin perder su contexto.
+- **Cierre:** una sesión se crea y retoma sin perder contexto, no se permiten dos activas por propietario, finish es idempotente y no se puede eliminar un Store referenciado.
 
 ## F6 — Carrito y presupuesto
 

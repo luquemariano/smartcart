@@ -111,10 +111,24 @@ export function StoreManager({
   }
 
   async function removeStore(id: string) {
-    if (mode === 'guest' && guestId) deleteLocalStore(guestId, id);
-    else await fetch(`/api/stores/${id}`, { method: 'DELETE' });
-    if (selectedId === id) setSelectedId(null);
-    await loadStores();
+    try {
+      if (mode === 'guest' && guestId) deleteLocalStore(guestId, id);
+      else {
+        const response = await fetch(`/api/stores/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error ?? 'No pudimos eliminar el supermercado.');
+        }
+      }
+      if (selectedId === id) setSelectedId(null);
+      await loadStores();
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'No pudimos eliminar el supermercado.',
+      );
+    }
   }
 
   function editStore(store: StoreView) {

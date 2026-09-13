@@ -7,6 +7,7 @@ import {
   getStore,
   StoreDuplicateError,
   StoreNotFoundError,
+  StoreReferencedError,
   updateStore,
 } from '@/server/stores';
 
@@ -76,6 +77,11 @@ export async function DELETE(_request: Request, context: Context) {
       return NextResponse.json(
         { error: 'Supermercado no encontrado.' },
         { status: 404 },
+      );
+    if (error instanceof StoreReferencedError)
+      return NextResponse.json(
+        { error: 'No podés eliminar un supermercado con compras asociadas.' },
+        { status: 409 },
       );
     throw error;
   }

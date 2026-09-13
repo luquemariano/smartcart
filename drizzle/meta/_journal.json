@@ -15,6 +15,13 @@
       "when": 1789270043347,
       "tag": "0001_add-products",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789271556108,
+      "tag": "0002_add-shopping-sessions",
+      "breakpoints": true
     }
   ]
 }

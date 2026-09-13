@@ -31,11 +31,18 @@ function toDbValues(userId: string, input: ProductInput) {
 }
 
 function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    error.code === '23505'
+  const candidates = [
+    error,
+    typeof error === 'object' && error !== null && 'cause' in error
+      ? error.cause
+      : null,
+  ];
+  return candidates.some(
+    (candidate) =>
+      typeof candidate === 'object' &&
+      candidate !== null &&
+      'code' in candidate &&
+      candidate.code === '23505',
   );
 }
 

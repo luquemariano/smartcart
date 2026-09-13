@@ -1,4 +1,5 @@
 import { storeDuplicateKey, type StoreInput } from '@/lib/store-validation';
+import { hasLocalShoppingSessionForStore } from '@/lib/local-shopping-session-repository';
 
 export type LocalStore = StoreInput & {
   id: string;
@@ -87,6 +88,8 @@ export function deleteLocalStore(guestId: string, id: string): void {
   const stores = read(guestId);
   if (!stores.some((store) => store.id === id))
     throw new Error('STORE_NOT_FOUND');
+  if (hasLocalShoppingSessionForStore(guestId, id))
+    throw new Error('STORE_REFERENCED');
   write(
     guestId,
     stores.filter((store) => store.id !== id),

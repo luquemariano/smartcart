@@ -9,6 +9,23 @@ import {
 
 export class StoreNotFoundError extends Error {}
 export class StoreDuplicateError extends Error {}
+export class StoreReferencedError extends Error {}
+
+function hasErrorCode(error: unknown, code: string): boolean {
+  const candidates = [
+    error,
+    typeof error === 'object' && error !== null && 'cause' in error
+      ? error.cause
+      : null,
+  ];
+  return candidates.some(
+    (candidate) =>
+      typeof candidate === 'object' &&
+      candidate !== null &&
+      'code' in candidate &&
+      candidate.code === code,
+  );
+}
 
 function toDbValues(userId: string, input: StoreInput) {
   const parsed = storeInputSchema.parse(input);
@@ -97,10 +114,17 @@ export async function updateStore(
 }
 
 export async function deleteStore(userId: string, storeId: string) {
-  const [store] = await db
-    .delete(stores)
-    .where(and(eq(stores.id, storeId), eq(stores.ownerUserId, userId)))
-    .returning({ id: stores.id });
+  try {
+    const [store] = await db
+      .delete(stores)
+      .where(and(eq(stores.id, storeId), eq(stores.ownerUserId, userId)))
+      .returning({ id: stores.id });
 
-  if (!store) throw new StoreNotFoundError();
+    if (!store) throw new StoreNotFoundError();
+  } catch (error) {
+    if (hasErrorCode(error, '23503')) {
+      throw new StoreReferencedError();
+    }
+    throw error;
+  }
 }

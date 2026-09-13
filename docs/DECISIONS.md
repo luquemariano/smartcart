@@ -181,3 +181,24 @@
 - **Motivo:** conservar el aislamiento guest y evitar migrar productos antes de definir la estrategia general guest→cuenta.
 - **Consecuencias:** el almacenamiento local no es backup; al existir historial se deberá archivar o impedir borrado destructivo.
 - **Estado:** aprobada para F4.
+
+## ADR-027 — Una única sesión activa
+
+- **Decisión:** un usuario o invitado puede tener como máximo una `ShoppingSession` en estado `active`; un segundo inicio devuelve conflicto claro.
+- **Motivo:** simplificar restauración, continuidad y UX, evitando compras paralelas accidentales.
+- **Consecuencias:** finalizar es necesario antes de iniciar otra; PostgreSQL refuerza la regla con un índice único parcial y guest la refuerza en su repositorio.
+- **Estado:** aprobada para F5.
+
+## ADR-028 — Store nullable y protegido por referencia
+
+- **Decisión:** una sesión puede no tener Store; si lo tiene, debe pertenecer al mismo usuario. La FK usa `ON DELETE RESTRICT`.
+- **Motivo:** permitir controlar una compra sin registrar lugar y preservar el contexto de sesiones ya creadas.
+- **Consecuencias:** eliminar un Store referenciado devuelve 409; no se introduce soft delete hasta que exista historial que lo justifique.
+- **Estado:** aprobada para F5.
+
+## ADR-029 — Sesiones guest locales sin importación automática
+
+- **Decisión:** persistir sesiones guest bajo `smartcart_guest_shopping_sessions_v1:<guestId>`, restaurarlas tras refresh y conservarlas hasta una importación explícita futura.
+- **Motivo:** F5 necesita continuidad local sin crear usuario ni datos cloud.
+- **Consecuencias:** no existe sincronización ni importación en esta fase; el historial guest es básico y no contiene productos ni precios.
+- **Estado:** aprobada para F5.
