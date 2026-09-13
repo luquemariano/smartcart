@@ -139,3 +139,24 @@
 - **Motivo:** evitar filtrar detalles internos y reducir confusión en móvil.
 - **Consecuencias:** códigos nuevos requieren actualizar el mapeo y mantener un fallback genérico.
 - **Estado:** aprobada.
+
+## ADR-021 — Drizzle solo para el dominio
+
+- **Decisión:** usar Drizzle ORM/Kit para las tablas de negocio de SmartCart y mantener Better Auth con su adaptador directo `pg` y sus migraciones oficiales.
+- **Motivo:** aporta schema tipado, consultas acotadas y migraciones reproducibles sin duplicar el esquema de identidad.
+- **Consecuencias:** `db:generate` y `db:migrate` administran solo el dominio; se debe ejecutar primero `auth:migrate` en un entorno nuevo.
+- **Estado:** aprobada para F3.
+
+## ADR-022 — Supermercados separados por propietario
+
+- **Decisión:** derivar `owner_user_id` de la sesión server-side, normalizar nombre/sucursal y aplicar unicidad por propietario.
+- **Motivo:** impedir acceso cruzado y duplicados accidentales sin imponer un catálogo global.
+- **Consecuencias:** dos cuentas pueden registrar el mismo supermercado; ningún `userId` del cliente autoriza una operación.
+- **Estado:** aprobada.
+
+## ADR-023 — Guest stores locales y baja física inicial
+
+- **Decisión:** guardar supermercados de invitados bajo `smartcart_guest_stores_v1:<guestId>` y usar hard delete en F3.
+- **Motivo:** el invitado no debe crear registros cloud y todavía no existe historial que requiera conservar referencias.
+- **Consecuencias:** la migración guest→cuenta y una eventual baja lógica quedan para fases posteriores; la clave local no es un mecanismo de backup.
+- **Estado:** aprobada para F3; revisar antes de implementar historial.

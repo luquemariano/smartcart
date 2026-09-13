@@ -8,14 +8,16 @@ Se propone un monolito modular simple, mobile-first y preparado para evolucionar
 
 - **Frontend:** Next.js con App Router, TypeScript y Tailwind CSS. Las pantallas deben separar presentación, estado de sesión y acceso a datos.
 - **Backend:** capacidades dentro de Next.js mediante Server Actions y Route Handlers según el caso. La lógica de dominio y autorización debe estar en el servidor, no en componentes cliente.
-- **Persistencia:** PostgreSQL como fuente de verdad de usuarios registrados, compras finalizadas, listas, productos, supermercados y observaciones.
-- **Contratos:** tipos compartidos y validación de entradas en los límites del servidor. La implementación concreta se decidirá en F1, evitando código especulativo en F0.
+- **Persistencia:** PostgreSQL como fuente de verdad de usuarios registrados y datos cloud. Better Auth conserva su adaptador directo `pg`; Drizzle gestiona las tablas de dominio de SmartCart desde F3.
+- **Contratos:** tipos compartidos y validación Zod en los límites del servidor. Las Route Handlers de stores derivan el propietario de la sesión y nunca aceptan `userId` del cliente como autoridad.
 
 ## 3. PWA y almacenamiento local
 
 La aplicación web deberá evolucionar a PWA instalable con manifest, service worker, iconos y estrategia de caché apropiada. El modo invitado utiliza almacenamiento local del dispositivo; IndexedDB es la opción recomendada para sesiones, ítems y metadatos de recuperación, evitando depender de `localStorage` para estructuras complejas.
 
 El almacenamiento local no debe considerarse automáticamente confiable, permanente ni multi-dispositivo. La UI debe permitir continuar y recuperar una sesión mientras el navegador conserve sus datos.
+
+En F3 los supermercados del invitado se guardan temporalmente en `localStorage` bajo `smartcart_guest_stores_v1:<guestId>`. Cada invitado tiene su propia clave; no se usa PostgreSQL. La estructura podrá migrar a IndexedDB cuando el volumen y la sincronización lo justifiquen.
 
 ## 4. Separación invitado/registrado
 
@@ -33,13 +35,15 @@ El invitado es deliberadamente local: no crea usuario, sesión Better Auth ni re
 
 Mientras una cuenta se autentica, el guest ID no se elimina automáticamente. `getPendingGuestIdentity()` permite que una futura rutina de importación lo lea y `clearGuestIdentityAfterImport()` lo elimine únicamente después de una importación explícita y exitosa. Logout solo cierra la sesión Better Auth; no crea una identidad invitada nueva.
 
+Los supermercados autenticados usan `/api/stores` y `/api/stores/:id`. Cada operación filtra por `owner_user_id` derivado de la sesión. Los supermercados se eliminan físicamente en F3; cuando exista historial se deberá evaluar archivo o baja lógica para preservar referencias.
+
 Los helpers server-side obtienen la sesión desde los headers de la request con `auth.api.getSession`. Ningún recurso futuro puede autorizarse con un `userId` recibido del navegador: el propietario debe derivarse de la sesión validada en servidor.
 
 ## 6. Offline y sincronización futura
 
 El diseño separa el estado editable de una compra del proceso de sincronización. En una evolución posterior, una cola local de operaciones con identificadores idempotentes podrá reintentar altas, cambios y eliminaciones cuando vuelva la conectividad. El servidor necesitará timestamps/versiones y reglas de conflicto.
 
-F0 fijó el contrato conceptual; F2.1 añade solo identidad local y autenticación. No se implementa aún el service worker ni la sincronización completa.
+F0 fijó el contrato conceptual; F2 añadió identidad y F3 añade solo supermercados. No se implementa aún el service worker ni la sincronización completa.
 
 ## 7. Dinero, privacidad e imágenes
 

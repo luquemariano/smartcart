@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-**F2.2 — Experiencia de identidad y acceso (completada).**
+**F3 — Supermercados (completada).**
 
 ## Qué existe hoy
 
@@ -24,19 +24,26 @@
 - Estados de carga, errores traducidos al español, estado autenticado con nombre/email/avatar y logout.
 - Contrato local `getPendingGuestIdentity`/`clearGuestIdentityAfterImport` preparado sin migración de compras.
 - Signout real verificado con `Origin`/`Referer` válidos y sesión posterior `null`.
+- Drizzle ORM 0.45.2 integrado únicamente para el dominio SmartCart, separado de Better Auth.
+- Tabla `stores` creada mediante migración Drizzle y aplicada en PostgreSQL.
+- CRUD autenticado de supermercados con autorización server-side, Zod y aislamiento por propietario.
+- CRUD local de supermercados para invitados, aislado por `guestId` en `localStorage`.
+- UI compartida para cuentas e invitados: listar, crear, editar, eliminar y seleccionar supermercado.
+- Tests de repositorio local, UI y flujo autenticado con aislamiento entre dos usuarios.
 
 ## Qué no existe
 
 - No existen carrito, supermercados, productos, historial, OCR, cámara, IndexedDB ni service worker offline complejo.
-- No se han creado tablas de negocio; solo existen las tablas estándar de identidad de Better Auth.
+- No existen productos, carritos, sesiones de compra, historial, sincronización ni migración guest→cuenta.
 - Google OAuth no fue probado con credenciales reales ni configuración externa de Google Cloud.
-- No se realizaron commits ni push durante F2.2.
+- La baja de supermercados es hard delete por ahora; deberá revisarse cuando exista historial.
+- No se realizaron commits ni push durante F3.
 
 ## Decisiones aprobadas
 
 Producto web responsive mobile-first, con evolución a PWA; invitado sin registro; cuenta opcional con Google y email; Better Auth sobre PostgreSQL; monolito Next.js con TypeScript/App Router/Tailwind; almacenamiento local preparado para IndexedDB; autorización server-side; imágenes efímeras y datos estructurados; sin monetización, scraping, promociones ni IA compleja en MVP. Better Auth usa sus migraciones oficiales; no se incorporó ORM adicional ni se crearon tablas de negocio. F2.2 conserva el guest ID tras autenticación para una futura importación explícita.
 
-El producto inicial es un asistente personal de compra, no un comparador general de supermercados.
+El producto inicial es un asistente personal de compra, no un comparador general de supermercados. F3 mantiene el alcance limitado al contexto de supermercados.
 
 ## Riesgos abiertos
 
@@ -47,10 +54,11 @@ El producto inicial es un asistente personal de compra, no un comparador general
 - Diseñar conflictos de migración invitado→cuenta y sincronización multi-dispositivo.
 - Validar qué capacidades PWA/offline son confiables en navegadores móviles objetivo.
 - Definir taxonomía de unidades y comportamiento de precios por peso/volumen.
+- Evaluar el riesgo de dependencias de desarrollo de Drizzle Kit: `npm install` reporta 4 vulnerabilidades moderadas transitivas.
 
 ## Siguiente fase
 
-Puede abordarse **F3 — Supermercados**, manteniendo fuera las funcionalidades de compra no previstas en esa fase.
+Puede abordarse **F4 — Productos**, manteniendo fuera carrito, sesión de compra, historial y sincronización hasta sus fases correspondientes.
 
 ## Instrucción de continuidad
 

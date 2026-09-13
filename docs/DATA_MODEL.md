@@ -23,7 +23,9 @@ Cuenta autenticada. Obligatorios: `id`, proveedor/identidad externa o email norm
 
 ### Store
 
-Supermercado utilizado por la persona. Obligatorios: `id`, `owner_user_id` para registros privados, nombre y timestamps. Nullable: dirección, localidad, identificador externo y ubicación aproximada. Una creación como invitado vive localmente hasta migración; no se persiste en PostgreSQL como dato de usuario sin asociación autorizada.
+Supermercado utilizado por la persona. En PostgreSQL F3: `id` texto, `owner_user_id` texto, `name`, `normalized_name`, `branch_name` nullable, `normalized_branch_name` nullable, `address` nullable, `latitude`/`longitude` `NUMERIC(9,6)` nullable y `created_at`/`updated_at` con zona horaria. La unicidad es por propietario, nombre normalizado y sucursal normalizada; se recortan y colapsan espacios y se compara en minúsculas con locale `es-AR`.
+
+La tabla no replica ni referencia el esquema de Better Auth: el propietario se valida server-side y se filtra en cada operación. Una creación como invitado vive en `localStorage` bajo su guest ID y no se persiste en PostgreSQL. F3 usa hard delete; al existir historial se deberá evaluar `archived_at`/soft delete.
 
 ### Product
 

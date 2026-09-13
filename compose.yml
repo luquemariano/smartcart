@@ -35,6 +35,21 @@ services:
     networks:
       - smartcart
 
+  domain-migrate:
+    profiles: ['tools']
+    build:
+      context: .
+      target: builder
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-smartcart}:${POSTGRES_PASSWORD:-smartcart_local_only}@db:5432/${POSTGRES_DB:-smartcart}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ['npm', 'run', 'db:migrate']
+    networks:
+      - smartcart
+
   db:
     image: postgres:17-alpine
     environment:

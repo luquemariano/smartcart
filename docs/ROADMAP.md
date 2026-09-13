@@ -1,6 +1,6 @@
 # SmartCart — Roadmap
 
-Las fases son pequeñas y verificables. F0 es la fase actual; ninguna fase posterior se considera implementada por existir en este documento.
+Las fases son pequeñas y verificables. F3 es la fase actual completada; ninguna fase posterior se considera implementada por existir en este documento.
 
 ## F0 — Foundation
 
@@ -19,7 +19,7 @@ Las fases son pequeñas y verificables. F0 es la fase actual; ninguna fase poste
 
 ## F2 — Identidad y modo invitado
 
-- **Estado:** en progreso; F2.1 completada.
+- **Estado:** completada; F2.1 y F2.2 completadas.
 - **Objetivo:** permitir entrar como invitado o autenticarse.
 - **Entregables:** sesión protegida, Google OAuth condicional, email/credenciales, sesión local invitada, migración conceptual documentada y tablas estándar de Better Auth.
 - **Dependencias:** F1.
@@ -43,10 +43,11 @@ Las fases son pequeñas y verificables. F0 es la fase actual; ninguna fase poste
 
 ## F3 — Supermercados
 
+- **Estado:** completada.
 - **Objetivo:** seleccionar y crear supermercados.
-- **Entregables:** CRUD autorizado para cuentas y almacenamiento local para invitados.
+- **Entregables:** modelo `stores` en PostgreSQL, migración Drizzle, CRUD API autenticado con Zod y autorización server-side, CRUD local para invitados y UI compartida de listado/alta/edición/baja/selección.
 - **Dependencias:** F2.
-- **Cierre:** selección/creación funciona con validación y aislamiento.
+- **Cierre:** selección/creación/edición/eliminación funciona con validación, aislamiento entre propietarios y aislamiento entre invitados; no se implementa aún migración ni sincronización.
 
 ## F4 — Productos
 

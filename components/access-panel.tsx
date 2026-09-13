@@ -6,6 +6,7 @@ import {
   clearGuestIdentityAfterImport,
   getGuestIdentity,
 } from '@/lib/guest-identity';
+import { StoreManager } from '@/components/store-manager';
 
 type EmailMode = 'signin' | 'signup';
 
@@ -16,6 +17,7 @@ export function AccessPanel({
 }) {
   const { data: session, isPending } = authClient.useSession();
   const [guest, setGuest] = useState(false);
+  const [guestId, setGuestId] = useState<string | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
   const [emailMode, setEmailMode] = useState<EmailMode>('signin');
   const [email, setEmail] = useState('');
@@ -115,6 +117,7 @@ export function AccessPanel({
         >
           Cerrar sesión
         </button>
+        <StoreManager mode="authenticated" />
       </div>
     );
   }
@@ -139,6 +142,7 @@ export function AccessPanel({
         >
           Salir y borrar identidad local
         </button>
+        <StoreManager guestId={guestId} mode="guest" />
         <button
           className="min-h-11 w-full rounded-xl border border-blue-200 px-4 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-50"
           onClick={() => setGuest(false)}
@@ -169,7 +173,7 @@ export function AccessPanel({
       <button
         className="min-h-12 w-full rounded-xl border border-blue-200 px-4 py-3 font-semibold text-blue-700 hover:bg-blue-50"
         onClick={() => {
-          getGuestIdentity();
+          setGuestId(getGuestIdentity());
           setGuest(true);
         }}
         type="button"

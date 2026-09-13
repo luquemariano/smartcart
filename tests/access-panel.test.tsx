@@ -14,6 +14,16 @@ vi.mock('@/lib/auth-client', () => ({ authClient: mockedAuthClient }));
 describe('access panel', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(new Response(JSON.stringify({ stores: [] }))),
+      ),
+    );
+    mockedAuthClient.useSession.mockReturnValue({
+      data: null,
+      isPending: false,
+    });
   });
 
   it('shows the local guest state without requiring registration', () => {
