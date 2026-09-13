@@ -105,7 +105,7 @@ Las fases son pequeñas y verificables. F10 es la fase actual completada; ningun
 - **Objetivo:** comparar compras, precios de productos y resúmenes por supermercado usando solo el historial propio.
 - **Entregables:** comparación contra compra anterior, estado parcial/insuficiente, porcentaje exacto cuando corresponde, compatibilidad estricta de presentación y moneda, resumen agregado por supermercado, endpoint de overview, UI guest/autenticada y validación de IDs/filtros.
 - **Dependencias:** F9.
-- **Cierre:** resultados trazables a snapshots históricos, sin inventar precios faltantes ni normalizaciones inseguras; F11 permanece pendiente.
+- **Cierre:** resultados trazables a snapshots históricos, sin inventar precios faltantes ni normalizaciones inseguras; F11 fue completada posteriormente.
 
 ## F11 — Listas de compras
 
@@ -128,12 +128,12 @@ Las fases son pequeñas y verificables. F10 es la fase actual completada; ningun
 - **Dependencias:** F5, F6, F8 y F12.
 - **Cierre:** barcode preservado como string, snapshots correctos, precio explícito, sin persistencia de imágenes y sin auto-inicio de sesión.
 
-## F14 — Dashboard
+## F14 — PriceObservation
 
-- **Objetivo:** presentar valor acumulativo.
-- **Entregables:** resumen de compras, tendencias simples y accesos a listas/comparaciones.
-- **Dependencias:** F9–F13.
-- **Cierre:** dashboard útil, rápido y sin convertir el producto en un comparador general.
+- **Objetivo:** registrar historial normalizado de precios por Product, Store y fecha.
+- **Entregables:** tabla `price_observations`, generación al finalizar compra, idempotencia, historial por Product, latest price por Store, soporte guest, reconstrucción F12 y backfill explícito.
+- **Dependencias:** F8–F13.
+- **Cierre:** migración 0008 aplicada, PostgreSQL real validado, ownership y delete protection confirmados, retry/backfill sin duplicados y tests completos.
 
 ## F15 — QA, mobile y PWA
 
@@ -157,6 +157,6 @@ Plantillas de compra con productos de catálogo o manuales, snapshots, cantidade
 
 Importación explícita y transaccional de Stores, Products, compras, ítems y listas. Incluye trazabilidad idempotente, resolución segura de duplicados, snapshot serializado desde el cliente, limpieza local posterior al éxito y preservación ante error o conflicto de sesión activa.
 
-### F14 — PriceObservation (en implementación)
+### F14 — PriceObservation (completada)
 
-Historial normalizado de precios de Products por Store y fecha, generado al finalizar compras con precio y Store válidos. Incluye consulta por Product, latest price por Store, backfill explícito e idempotente, soporte guest y reconstrucción durante F12. La comparación completa de listas por supermercado pertenece a F15.
+Historial normalizado de precios de Products por Store y fecha, generado al finalizar compras con precio y Store válidos. Incluye consulta por Product, latest price por Store, backfill explícito e idempotente, soporte guest y reconstrucción durante F12. La comparación completa de listas por supermercado queda fuera de F14 y no fue iniciada.

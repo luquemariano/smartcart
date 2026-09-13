@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-**F10 — Comparaciones históricas (completada).**
+**F14 — PriceObservation (completada y cerrada).** HEAD: `e903fa7` (`feat: add F14 price observations`). F15 todavía no fue iniciada.
 
 ## Qué existe hoy
 
@@ -59,7 +59,7 @@
 
 ## Qué no existe
 
-- No existen PriceObservation, predicciones, scraping, IA, gráficos complejos, captura asistida/OCR/cámara, cantidades compradas por peso con reglas específicas, sincronización ni migración guest→cuenta.
+- No existen predicciones, scraping, IA, gráficos complejos, captura asistida/OCR, cantidades compradas por peso con reglas específicas ni sincronización avanzada. PriceObservation y la migración guest→cuenta de F12 están implementadas.
 - Google OAuth no fue probado con credenciales reales ni configuración externa de Google Cloud.
 - La baja de supermercados sigue siendo hard delete solo para Stores no referenciados; los referenciados se rechazan para proteger el historial. Soft delete queda pendiente.
 - La baja de productos es hard delete por ahora, pero los Products referenciados por ítems históricos quedan protegidos por FK `RESTRICT`.
@@ -84,7 +84,7 @@ El producto inicial es un asistente personal de compra, no un comparador general
 
 ## Siguiente fase
 
-La siguiente fase puede abordar **F11 — Listas de compras**, manteniendo fuera PriceObservation, OCR, cámara, lector de barcode y sincronización.
+La siguiente fase es **F15 — QA, mobile y PWA**. F15 todavía no fue iniciada.
 
 ## Instrucción de continuidad
 
@@ -96,4 +96,4 @@ F12 — Importación guest → cuenta: implementada y validada contra PostgreSQL
 
 F13 — Barcode durante compra activa: implementada. Usa `BarcodeDetector` nativo cuando existe, cámara trasera en memoria y entrada manual como fallback; agrega Products conocidos o permite alta rápida de Products desconocidos con precio explícito, tanto para cuenta como guest. No incorpora migración ni almacenamiento de imágenes. La prueba física de cámara queda pendiente de un dispositivo/navegador compatible.
 
-F14 — PriceObservation: código de dominio, migración `0008`, backfill explícito, historial autenticado y soporte guest preparados. La aplicación de `0008` y la ejecución del backfill sobre el volumen Docker quedan pendientes de autorización operativa del entorno.
+F14 — PriceObservation: COMPLETADA, validada y cerrada. Incluye migración `0008`, tabla, índices y constraints, generación atómica al finalizar ShoppingSession, idempotencia por `shopping_item_id`, historial por Product, latest price por Store, soporte guest, reconstrucción server-side durante F12 y backfill histórico idempotente. La integración PostgreSQL real, multi-Store, ownership, delete protection, rollback y retry F12 fueron validados. Total efectivo: 58 tests OK.

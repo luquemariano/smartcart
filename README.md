@@ -23,6 +23,8 @@ Durante una compra activa se puede agregar un producto por código de barras. Se
 
 Al finalizar una compra con Store, los ítems de catálogo que tienen precio generan `PriceObservation`, el historial normalizado Product + Store + fecha. Los ítems manuales, compras sin Store y precios faltantes se omiten. El backfill histórico es explícito y reejecutable con `npm run db:backfill-price-observations` después de aplicar la migración de dominio.
 
+F14 — PriceObservation está completada y validada contra PostgreSQL real. La migración 0008, el historial por Product, latest price por Store, soporte guest, importación F12, backfill e idempotencia están cerrados. F15 todavía no fue iniciada.
+
 ## Ejecución con Docker
 
 ```bash
