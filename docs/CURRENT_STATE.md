@@ -91,3 +91,5 @@ La siguiente fase puede abordar **F11 — Listas de compras**, manteniendo fuera
 La próxima instancia debe leer este archivo junto con PRODUCT, ARCHITECTURE, DATA_MODEL, ROADMAP y DECISIONS antes de cambiar el repositorio. Debe conservar las decisiones autoritativas y señalar contradicciones antes de inventar nuevas reglas.
 
 F11 — Listas de compras reutilizables: CRUD, snapshots, checked/reset, duplicación, importación a compra activa y equivalencia guest local. No incluye precios proyectados, OCR, promociones ni comparación automática.
+
+F12 — Importación guest → cuenta: implementada y validada contra PostgreSQL con migración 0007 aplicada, importación explícita, idempotencia, rollback y conflicto de sesión activa.

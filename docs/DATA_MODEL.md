@@ -17,6 +17,10 @@
 
 Una lista es una plantilla: marcar/desmarcar y “Desmarcar todos” no modifica compras. Duplicar copia snapshots y cantidades, reiniciando checks. Importar a una `ShoppingSession` crea `ShoppingItem` independientes con `unit_price = null`; no se copian precios ni se crea asociación histórica obligatoria. La FK de `shopping_list_items` usa cascade hacia la lista y restrict hacia Product.
 
+### GuestImport (F12)
+
+`guest_imports` registra una importación exitosa mediante `owner_user_id`, hash SHA-256 estable del guest ID, versión, fecha y metadata mínima. Una restricción única por propietario y hash hace idempotentes los reintentos. Los IDs locales nunca se reutilizan: la importación genera nuevos IDs y reconstruye Stores, Products, Sessions y Lists con mapas temporales. El snapshot se procesa todo-o-nada; si hay conflicto de sesión activa o una referencia inválida no se limpia ningún dato local.
+
 ### Tablas de Better Auth
 
 Better Auth crea y mantiene sus tablas estándar mediante su migración oficial: `user`, `session`, `account` y `verification`, además de cualquier campo o tabla que requiera la versión instalada. Estas tablas pertenecen exclusivamente a identidad/sesiones y no son entidades de negocio de SmartCart. No se crean versiones paralelas manuales.

@@ -294,6 +294,13 @@
 - **Consecuencias:** el detalle usa consultas acotadas/batch; el overview puede recorrer el historial propio una vez para agregarlo; no se afirma cobertura fuera de las compras registradas.
 - **Estado:** aprobada para F10.
 
+## ADR-044 — Importación guest explícita, idempotente y todo-o-nada
+
+- **Decisión:** `POST /api/guest-import` recibe un snapshot validado del cliente y procesa todos los datos en una transacción. `guest_imports` registra el hash SHA-256 del guest ID por usuario y versión; IDs guest nunca se reutilizan.
+- **Motivo:** permitir reintentos seguros y evitar pérdida de datos o estados parcialmente importados.
+- **Consecuencias:** Stores y Products compatibles se reutilizan; compras y listas se conservan como eventos/entidades independientes. Si la cuenta tiene una sesión activa mientras el guest también tiene una activa, se aborta la importación completa y se conserva el guest local para reintentar después.
+- **Estado:** aprobada para F12.
+
 ## ADR-043 — Compatibilidad estricta de precio por producto
 
 - **Decisión:** comparar precios de un mismo `product_id` solo si coinciden exactamente la presentación y la moneda; cantidades faltantes, precios faltantes y bases cero no generan porcentajes inventados.

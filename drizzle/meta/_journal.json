@@ -50,6 +50,13 @@
       "when": 1789279000000,
       "tag": "0006_add-shopping-lists",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789330000000,
+      "tag": "0007_add-guest-imports",
+      "breakpoints": true
     }
   ]
 }

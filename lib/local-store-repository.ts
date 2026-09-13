@@ -95,3 +95,12 @@ export function deleteLocalStore(guestId: string, id: string): void {
     stores.filter((store) => store.id !== id),
   );
 }
+
+export function getPendingGuestStores(guestId: string): LocalStore[] {
+  return listLocalStores(guestId);
+}
+
+export function clearGuestStoresAfterImport(guestId: string): void {
+  if (typeof window !== 'undefined')
+    window.localStorage.removeItem(storageKey(guestId));
+}

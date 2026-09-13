@@ -10,6 +10,7 @@ import { StoreManager } from '@/components/store-manager';
 import { ProductManager } from '@/components/product-manager';
 import { ShoppingSessionManager } from '@/components/shopping-session-manager';
 import { ShoppingListManager } from '@/components/shopping-list-manager';
+import { GuestImportPrompt } from '@/components/guest-import-prompt';
 
 type EmailMode = 'signin' | 'signup';
 
@@ -120,6 +121,7 @@ export function AccessPanel({
         >
           Cerrar sesión
         </button>
+        <GuestImportPrompt />
         <StoreManager mode="authenticated" />
         <ProductManager mode="authenticated" />
         <ShoppingSessionManager mode="authenticated" />

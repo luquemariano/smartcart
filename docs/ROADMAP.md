@@ -145,3 +145,7 @@ Las fases son pequeñas y verificables. F10 es la fase actual completada; ningun
 ### F11 — Listas reutilizables (implementada)
 
 Plantillas de compra con productos de catálogo o manuales, snapshots, cantidades, checks, duplicación, reset, guest local e importación a ShoppingSession. La siguiente fase puede explorar observaciones de precio y comparación sin acoplarlas a esta plantilla.
+
+### F12 — Importación guest → cuenta (implementada)
+
+Importación explícita y transaccional de Stores, Products, compras, ítems y listas. Incluye trazabilidad idempotente, resolución segura de duplicados, snapshot serializado desde el cliente, limpieza local posterior al éxito y preservación ante error o conflicto de sesión activa.
