@@ -1,6 +1,7 @@
 import { addDecimalStrings } from '@/lib/decimal';
 import {
   shoppingItemInputSchema,
+  shoppingItemPatchSchema,
   shoppingItemQuantitySchema,
   type ShoppingItemInput,
 } from '@/lib/shopping-item-validation';
@@ -16,6 +17,7 @@ export type LocalShoppingItem = {
   productQuantityValue: string | null;
   productQuantityUnit: string | null;
   quantity: string;
+  unitPrice: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -41,7 +43,9 @@ function read(guestId: string): LocalShoppingItem[] {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw) as LocalShoppingItem[];
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed)
+      ? parsed.map((item) => ({ ...item, unitPrice: item.unitPrice ?? null }))
+      : [];
   } catch {
     return [];
   }
@@ -93,6 +97,8 @@ export function addLocalShoppingItem(
             item.productId === parsed.productId,
         );
   if (existing) {
+    if (existing.unitPrice !== parsed.unitPrice)
+      throw new Error('PRICE_CONFLICT');
     let quantity: string;
     try {
       quantity = addDecimalStrings(
@@ -140,6 +146,7 @@ export function addLocalShoppingItem(
     shoppingSessionId: sessionId,
     ...snapshot,
     quantity: parsed.quantity,
+    unitPrice: parsed.unitPrice,
     createdAt: now,
     updatedAt: now,
   };
@@ -160,6 +167,29 @@ export function updateLocalShoppingItemQuantity(
   const updated = {
     ...existing,
     quantity: parsed.quantity,
+    updatedAt: new Date().toISOString(),
+  };
+  write(
+    guestId,
+    items.map((item) => (item.id === itemId ? updated : item)),
+  );
+  return updated;
+}
+
+export function updateLocalShoppingItem(
+  guestId: string,
+  itemId: string,
+  input: unknown,
+): LocalShoppingItem {
+  const parsed = shoppingItemPatchSchema.parse(input);
+  const items = read(guestId);
+  const existing = items.find((item) => item.id === itemId);
+  if (!existing) throw new Error('SHOPPING_ITEM_NOT_FOUND');
+  ensureSession(guestId, existing.shoppingSessionId, true);
+  const updated = {
+    ...existing,
+    ...(parsed.quantity === undefined ? {} : { quantity: parsed.quantity }),
+    ...(parsed.unitPrice === undefined ? {} : { unitPrice: parsed.unitPrice }),
     updatedAt: new Date().toISOString(),
   };
   write(

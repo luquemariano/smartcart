@@ -6,7 +6,7 @@ import {
   ShoppingItemCompletedError,
   ShoppingItemNotFoundError,
   ShoppingItemQuantityLimitError,
-  updateShoppingItemQuantity,
+  updateShoppingItem,
 } from '@/server/shopping-items';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -23,12 +23,12 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
     return NextResponse.json({
-      item: await updateShoppingItemQuantity(user.id, id, await request.json()),
+      item: await updateShoppingItem(user.id, id, await request.json()),
     });
   } catch (error) {
     if (error instanceof z.ZodError)
       return NextResponse.json(
-        { error: error.issues[0]?.message ?? 'La cantidad no es válida.' },
+        { error: error.issues[0]?.message ?? 'El ítem no es válido.' },
         { status: 400 },
       );
     if (error instanceof ShoppingItemNotFoundError)

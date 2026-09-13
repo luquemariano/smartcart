@@ -25,6 +25,7 @@ export const shoppingItems = pgTable(
     }),
     productQuantityUnit: text('product_quantity_unit'),
     quantity: numeric('quantity', { precision: 12, scale: 3 }).notNull(),
+    unitPrice: numeric('unit_price', { precision: 19, scale: 2 }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

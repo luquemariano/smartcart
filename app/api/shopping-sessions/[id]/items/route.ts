@@ -3,9 +3,10 @@ import { z } from 'zod';
 import { getServerSession } from '@/lib/server-session';
 import {
   addShoppingItem,
-  listShoppingItems,
+  getShoppingSessionSummary,
   ShoppingItemCompletedError,
   ShoppingItemQuantityLimitError,
+  ShoppingItemPriceConflictError,
 } from '@/server/shopping-items';
 import { ProductNotFoundError } from '@/server/products';
 import { ShoppingSessionNotFoundError } from '@/server/shopping-sessions';
@@ -24,7 +25,7 @@ export async function GET(_request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
     return NextResponse.json({
-      items: await listShoppingItems(user.id, id),
+      ...(await getShoppingSessionSummary(user.id, id)),
     });
   } catch (error) {
     if (error instanceof ShoppingSessionNotFoundError)
@@ -71,6 +72,14 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json(
         { error: 'La cantidad supera el límite permitido.' },
         { status: 400 },
+      );
+    if (error instanceof ShoppingItemPriceConflictError)
+      return NextResponse.json(
+        {
+          error:
+            'El producto ya está en la compra con otro precio. Ajustá el ítem existente antes de agregarlo nuevamente.',
+        },
+        { status: 409 },
       );
     throw error;
   }

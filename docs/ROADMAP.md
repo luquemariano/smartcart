@@ -83,12 +83,13 @@ Las fases son pequeñas y verificables. F7 es la fase actual completada; ninguna
 - **Dependencias:** F4, F6.
 - **Cierre:** flujo manual completo validado para cuenta e invitado; los ítems sobreviven la finalización y no se introducen capturas ni imágenes.
 
-## F8 — Captura de precio
+## F8 — Precio, subtotales y resumen
 
-- **Objetivo:** convertir una captura en precio estructurado.
-- **Entregables:** entrada asistida, validaciones, unidad y descarte de imagen.
+- **Estado:** completada en su alcance MVP; la captura asistida queda fuera.
+- **Objetivo:** registrar precio por unidad/presentación y controlar el gasto durante la compra.
+- **Entregables:** `unit_price` nullable, validación decimal, subtotales/total derivados, resumen con presupuesto, disponible y porcentaje, edición inline, historial básico y semántica guest equivalente.
 - **Dependencias:** F7.
-- **Cierre:** observación revisable antes de guardarse.
+- **Cierre:** precio pendiente no cuenta como cero, el mismo producto no sobrescribe un precio silenciosamente, y una compra completada conserva precio, cantidad y snapshot en modo lectura.
 
 ## F9 — Historial
 

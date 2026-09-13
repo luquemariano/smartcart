@@ -39,7 +39,7 @@ Los supermercados autenticados usan `/api/stores` y `/api/stores/:id`. Cada oper
 
 Los productos autenticados usan `/api/products` y `/api/products/:id`, con búsqueda opcional `?q=`. El catálogo es personal, no global: cada operación filtra por `owner_user_id`. F7 puede referenciar un Product desde una sesión, pero conserva snapshot de nombre, marca, barcode y presentación; el Product no se puede eliminar mientras tenga referencias históricas.
 
-Las sesiones autenticadas usan `/api/shopping-sessions`, `/active` y `/:id`. `store_id` es nullable y, cuando se informa, el servidor verifica que el Store pertenezca al mismo usuario. PostgreSQL aplica una FK `RESTRICT` y un índice único parcial para impedir más de una sesión `active` por propietario. F6 agrega presupuesto opcional como `NUMERIC(19,2)` nullable y `currency VARCHAR(3) NOT NULL DEFAULT 'ARS'`; la API lo transporta como string decimal y no acepta moneda del cliente. F7 agrega `/api/shopping-sessions/:id/items` para listar/agregar y `/api/shopping-items/:id` para editar/eliminar. Cada operación comprueba propietario y estado activo; una sesión completada conserva sus ítems de forma inmutable.
+Las sesiones autenticadas usan `/api/shopping-sessions`, `/active` y `/:id`. `store_id` es nullable y, cuando se informa, el servidor verifica que el Store pertenezca al mismo usuario. PostgreSQL aplica una FK `RESTRICT` y un índice único parcial para impedir más de una sesión `active` por propietario. F6 agrega presupuesto opcional como `NUMERIC(19,2)` nullable y `currency VARCHAR(3) NOT NULL DEFAULT 'ARS'`; la API lo transporta como string decimal y no acepta moneda del cliente. F7 agrega `/api/shopping-sessions/:id/items` para listar/agregar y `/api/shopping-items/:id` para editar/eliminar; F8 agrega precio unitario nullable y devuelve en la misma respuesta un resumen derivado confiable. Cada operación comprueba propietario y estado activo; una sesión completada conserva sus ítems de forma inmutable.
 
 La eliminación de Store ahora se rechaza cuando existe una sesión asociada, incluso si está `completed`; esto conserva el contexto para el futuro historial sin introducir soft delete prematuramente.
 
@@ -64,3 +64,7 @@ Docker encapsulará la aplicación Next.js y, para desarrollo local, PostgreSQL.
 ## 9. Escalabilidad deliberada
 
 Módulos de dominio dentro del monolito (auth, stores, products, shopping, history, lists) permiten crecer sin convertir cada capacidad en un servicio independiente. Se podrá extraer un componente solo ante evidencia de carga, límites operativos o una integración que lo justifique.
+
+## F8 — Precios y resumen de compra
+
+`ShoppingItem.unitPrice` es nullable y se persiste como `NUMERIC(19,2)`. Las rutas autenticadas derivan subtotal, total, disponible y porcentaje mediante `lib/shopping-summary.ts`; la UI no persiste cálculos ni usa aritmética flotante para dinero. El repositorio guest reutiliza los mismos helpers. Un alta de catálogo con precio distinto al de la línea existente devuelve conflicto `409`; la edición explícita vía PATCH permite corregirlo. Las sesiones completadas exponen sus snapshots, cantidades y precios en modo lectura.

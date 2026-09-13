@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-**F7 — Ítems de la sesión (completada).**
+**F8 — Precio, subtotales y resumen (completada).**
 
 ## Qué existe hoy
 
@@ -44,15 +44,16 @@
 - Fechas persistidas como timestamps UTC y formateadas en zona local para la UI.
 - Presupuesto opcional por sesión en `NUMERIC(19,2)`, expuesto como string decimal y con `ARS` por defecto.
 - Inicio, edición, eliminación y conservación del presupuesto al finalizar, tanto en PostgreSQL como en el repositorio guest local.
-- Sesiones finalizadas inmutables respecto del presupuesto y de sus ítems; la UI no calcula todavía precios, subtotales ni total.
-- Tabla `shopping_items` con snapshot del producto y `quantity NUMERIC(12,3)`, sin precio ni subtotal.
-- Alta desde catálogo o manual, incremento atómico de la misma referencia de catálogo, modificación/eliminación en sesiones activas y listado histórico de ítems.
+- Sesiones finalizadas inmutables respecto del presupuesto y de sus ítems; la UI muestra el total final en modo lectura.
+- Tabla `shopping_items` con snapshot del producto, `quantity NUMERIC(12,3)` y `unit_price NUMERIC(19,2) NULL`; subtotal y total son derivados.
+- Alta desde catálogo o manual con precio opcional, incremento atómico de la misma referencia solo cuando el precio coincide, y conflicto explícito ante precio diferente.
+- Edición inline de cantidad/precio, subtotales por ítem y resumen autenticado server-side con gasto, presupuesto, disponible y porcentaje.
 - FKs `shopping_session_id` y `product_id` con `ON DELETE RESTRICT`; Product usado no puede eliminarse.
-- Repositorio guest de ítems persistente, aislado por guest ID y sesión, con el mismo ciclo activo/histórico.
+- Repositorio guest de ítems persistente, aislado por guest ID y sesión, con el mismo ciclo activo/histórico y helpers monetarios compartidos.
 
 ## Qué no existe
 
-- No existen precios, cantidades compradas por peso, subtotales, total, presupuesto restante, historial de precios, sincronización ni migración guest→cuenta.
+- No existen captura asistida/OCR/cámara, cantidades compradas por peso con reglas específicas, historial de precios, sincronización ni migración guest→cuenta.
 - Google OAuth no fue probado con credenciales reales ni configuración externa de Google Cloud.
 - La baja de supermercados es hard delete por ahora; deberá revisarse cuando exista historial.
 - La baja de productos es hard delete por ahora; deberá revisarse cuando exista historial o referencias.
@@ -72,12 +73,12 @@ El producto inicial es un asistente personal de compra, no un comparador general
 - Decidir proveedor de PostgreSQL y hosting.
 - Diseñar conflictos de migración invitado→cuenta y sincronización multi-dispositivo.
 - Validar qué capacidades PWA/offline son confiables en navegadores móviles objetivo.
-- Definir reglas de precios por peso/volumen cuando llegue F8.
+- Definir reglas de precios por peso/volumen cuando se retome ese alcance futuro.
 - Evaluar el riesgo de dependencias de desarrollo de Drizzle Kit: `npm install` reporta 4 vulnerabilidades moderadas transitivas.
 
 ## Siguiente fase
 
-Puede abordarse **F8 — Captura de precio**, manteniendo fuera OCR, cámara, lector de barcode, subtotales, total, comparación e historial hasta sus fases correspondientes.
+La siguiente fase puede abordar **F9 — Historial**, manteniendo fuera OCR, cámara, lector de barcode, comparación y sincronización.
 
 ## Instrucción de continuidad
 

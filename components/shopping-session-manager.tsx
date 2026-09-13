@@ -11,6 +11,11 @@ import {
 } from '@/lib/local-shopping-session-repository';
 import { formatMoney } from '@/lib/money';
 import {
+  calculateShoppingSummary,
+  type ShoppingSummary,
+} from '@/lib/shopping-summary';
+import { listLocalShoppingItems } from '@/lib/local-shopping-item-repository';
+import {
   budgetShoppingSessionSchema,
   startShoppingSessionSchema,
 } from '@/lib/shopping-session-validation';
@@ -43,6 +48,9 @@ export function ShoppingSessionManager({
   const [stores, setStores] = useState<StoreView[]>([]);
   const [sessions, setSessions] = useState<SessionView[]>([]);
   const [active, setActive] = useState<SessionView | null>(null);
+  const [activeSummary, setActiveSummary] = useState<ShoppingSummary | null>(
+    null,
+  );
   const [storeId, setStoreId] = useState('');
   const [budgetInput, setBudgetInput] = useState('');
   const [budgetEditOpen, setBudgetEditOpen] = useState(false);
@@ -61,6 +69,15 @@ export function ShoppingSessionManager({
       setStores(localStores);
       setSessions(localSessions);
       setActive(localActive);
+      setActiveSummary(
+        localActive
+          ? calculateShoppingSummary(
+              localActive.budgetAmount,
+              localActive.currency,
+              listLocalShoppingItems(guestId, localActive.id),
+            )
+          : null,
+      );
       setBudgetEditValue(localActive?.budgetAmount ?? '');
       setLoading(false);
       return;
@@ -82,6 +99,9 @@ export function ShoppingSessionManager({
         setStores(storesResponse.ok ? (storesData?.stores ?? []) : []);
         setSessions(sessionsResponse.ok ? (sessionsData?.sessions ?? []) : []);
         setActive(nextActive);
+        setActiveSummary(
+          activeResponse.ok ? (activeData?.summary ?? null) : null,
+        );
         setBudgetEditValue(nextActive?.budgetAmount ?? '');
         if (!storesResponse.ok || !sessionsResponse.ok || !activeResponse.ok) {
           setMessage('No pudimos cargar tus compras.');
@@ -90,6 +110,7 @@ export function ShoppingSessionManager({
         setStores([]);
         setSessions([]);
         setActive(null);
+        setActiveSummary(null);
         setMessage('No pudimos cargar tus compras.');
       }
     }
@@ -221,6 +242,22 @@ export function ShoppingSessionManager({
 
   const activeStore = stores.find((store) => store.id === active?.storeId);
 
+  function budgetUsageWidth(summary: ShoppingSummary) {
+    const percentage = Number(summary.budgetUsagePercentage ?? '0');
+    return `${Math.min(100, Math.max(0, percentage))}%`;
+  }
+
+  function summaryMessage(summary: ShoppingSummary) {
+    if (!summary.budgetAmount || !summary.budgetUsagePercentage) return null;
+    const percentage = Number(summary.budgetUsagePercentage);
+    if (summary.itemsTotal === '0.00')
+      return 'Todavía no hay gasto registrado.';
+    if (percentage >= 100)
+      return `Superaste tu presupuesto en ${formatMoney(summary.remainingBudget ? summary.remainingBudget.replace('-', '') : '0.00', summary.currency)}.`;
+    if (percentage >= 80) return 'Estás cerca de tu presupuesto.';
+    return `Te quedan ${formatMoney(summary.remainingBudget, summary.currency)}.`;
+  }
+
   return (
     <section
       className="mt-8 border-t border-slate-200 pt-6"
@@ -247,13 +284,94 @@ export function ShoppingSessionManager({
           <p className="mt-1 text-sm text-slate-600">
             Iniciada {formatDate(active.startedAt)}
           </p>
+          {activeSummary && (
+            <div
+              className="mt-4 rounded-lg bg-white p-3"
+              aria-label="Resumen de la compra"
+            >
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Gastado
+                  </p>
+                  <p className="mt-1 text-lg font-bold text-slate-950">
+                    {formatMoney(
+                      activeSummary.itemsTotal,
+                      activeSummary.currency,
+                    )}
+                  </p>
+                </div>
+                {activeSummary.budgetAmount && (
+                  <>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Presupuesto
+                      </p>
+                      <p className="mt-1 text-lg font-bold text-slate-950">
+                        {formatMoney(
+                          activeSummary.budgetAmount,
+                          activeSummary.currency,
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Disponible
+                      </p>
+                      <p
+                        className={`mt-1 text-lg font-bold ${activeSummary.remainingBudget?.startsWith('-') ? 'text-rose-700' : 'text-slate-950'}`}
+                      >
+                        {activeSummary.itemsTotal === '0.00'
+                          ? 'Sin gastos todavía'
+                          : formatMoney(
+                              activeSummary.remainingBudget,
+                              activeSummary.currency,
+                            )}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+              {activeSummary.budgetAmount &&
+                activeSummary.budgetUsagePercentage && (
+                  <div className="mt-4">
+                    <div className="flex justify-between text-sm text-slate-600">
+                      <span>Uso del presupuesto</span>
+                      <span>{activeSummary.budgetUsagePercentage}%</span>
+                    </div>
+                    <div
+                      className="mt-2 h-3 overflow-hidden rounded-full bg-slate-200"
+                      role="progressbar"
+                      aria-label="Uso del presupuesto"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={Math.min(
+                        100,
+                        Math.max(
+                          0,
+                          Number(activeSummary.budgetUsagePercentage),
+                        ),
+                      )}
+                    >
+                      <div
+                        className={`h-full rounded-full ${Number(activeSummary.budgetUsagePercentage) >= 100 ? 'bg-rose-600' : Number(activeSummary.budgetUsagePercentage) >= 80 ? 'bg-amber-500' : 'bg-blue-600'}`}
+                        style={{ width: budgetUsageWidth(activeSummary) }}
+                      />
+                    </div>
+                    <p className="mt-2 text-sm text-slate-700">
+                      {summaryMessage(activeSummary)}
+                    </p>
+                  </div>
+                )}
+            </div>
+          )}
           <div className="mt-4 rounded-lg bg-white/70 p-3">
             <p className="text-sm font-semibold text-slate-700">Presupuesto</p>
-            <p className="mt-1 text-lg font-bold text-slate-950">
-              {active.budgetAmount
-                ? formatMoney(active.budgetAmount, active.currency)
-                : 'Sin presupuesto definido'}
-            </p>
+            {!active.budgetAmount && (
+              <p className="mt-1 text-sm text-slate-600">
+                Sin presupuesto definido
+              </p>
+            )}
             {budgetEditOpen ? (
               <div className="mt-3 space-y-2">
                 <input
@@ -311,9 +429,6 @@ export function ShoppingSessionManager({
               </div>
             )}
           </div>
-          <p className="mt-3 text-sm text-slate-600">
-            Todavía no hay productos ni precios en esta etapa.
-          </p>
           <div className="mt-4 flex gap-3">
             <button
               className="min-h-11 flex-1 rounded-lg border border-blue-300 px-3 py-2 text-sm font-semibold text-blue-700"
@@ -336,6 +451,7 @@ export function ShoppingSessionManager({
             mode={mode}
             sessionId={active.id}
             status={active.status}
+            onSummaryChange={setActiveSummary}
           />
         </div>
       ) : (

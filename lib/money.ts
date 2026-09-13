@@ -56,3 +56,66 @@ export function formatMoney(
     maximumFractionDigits: MONEY_SCALE,
   }).format(Number(value));
 }
+
+function parseCanonicalMoney(value: string): bigint {
+  if (!/^\d+(?:\.\d{1,2})?$/.test(value))
+    throw new MoneyInputError('El importe no es válido.');
+  const parsed = canonicalMoney(value);
+  if (compareDecimal(parsed, MAX_MONEY_AMOUNT) > 0)
+    throw new MoneyInputError('El importe supera el máximo permitido.');
+  const [whole, fraction] = parsed.split('.');
+  return BigInt(whole) * BigInt(100) + BigInt(fraction);
+}
+
+function parseQuantityScaled(value: string): bigint {
+  if (!/^\d+(?:\.\d{1,3})?$/.test(value))
+    throw new MoneyInputError('La cantidad no es válida.');
+  const [whole, fraction = ''] = value.split('.');
+  return BigInt(whole) * BigInt(1000) + BigInt(fraction.padEnd(3, '0') || '0');
+}
+
+function formatCents(cents: bigint): string {
+  const sign = cents < BigInt(0) ? '-' : '';
+  const absolute = cents < BigInt(0) ? -cents : cents;
+  return `${sign}${absolute / BigInt(100)}.${(absolute % BigInt(100))
+    .toString()
+    .padStart(2, '0')}`;
+}
+
+function roundHalfUp(numerator: bigint, denominator: bigint): bigint {
+  return (numerator + denominator / BigInt(2)) / denominator;
+}
+
+/** Derives a cent-precise subtotal without using floating-point arithmetic. */
+export function multiplyMoneyByQuantity(
+  unitPrice: string,
+  quantity: string,
+): string {
+  const cents = parseCanonicalMoney(unitPrice);
+  const quantityScaled = parseQuantityScaled(quantity);
+  return formatCents(roundHalfUp(cents * quantityScaled, BigInt(1000)));
+}
+
+/** Adds already validated money strings using integer cents. Nulls are excluded. */
+export function sumMoney(values: Array<string | null | undefined>): string {
+  const cents = values.reduce(
+    (total, value) => (value ? total + parseCanonicalMoney(value) : total),
+    BigInt(0),
+  );
+  return formatCents(cents);
+}
+
+export function subtractMoney(left: string, right: string): string {
+  return formatCents(parseCanonicalMoney(left) - parseCanonicalMoney(right));
+}
+
+/** Returns a percentage with two decimals, preserving values above 100%. */
+export function percentageOfBudget(
+  total: string,
+  budget: string | null | undefined,
+): string | null {
+  if (!budget) return null;
+  const totalCents = parseCanonicalMoney(total);
+  const budgetCents = parseCanonicalMoney(budget);
+  return formatCents(roundHalfUp(totalCents * BigInt(10000), budgetCents));
+}

@@ -4,7 +4,7 @@
 
 - Cada entidad persistida tiene `id` estable, `created_at` y `updated_at` cuando corresponda.
 - Fechas y horas se almacenan en UTC; la UI presenta la zona local de la persona.
-- Los importes de líneas y observaciones futuras se reservan como `NUMERIC(19,4)` (o precisión equivalente acordada en su implementación), nunca como `float`. El presupuesto de `ShoppingSession` está definido en F6 como `NUMERIC(19,2)`. Cada importe persistido lleva código de moneda ISO 4217; inicialmente se usa `ARS`.
+- Los importes se almacenan como `NUMERIC`, nunca como `float`. El presupuesto y `ShoppingItem.unit_price` usan `NUMERIC(19,2)`. Cada importe persistido lleva código de moneda ISO 4217; inicialmente se usa `ARS`.
 - Cantidades usan `NUMERIC(19,4)` para admitir fracciones futuras. `unit_code` identifica unidad (por ejemplo `unit`, `kg`, `g`, `l`, `ml`).
 - Nombres ingresados manualmente son válidos aunque no exista código de barras.
 - `deleted_at` puede usarse para bajas lógicas donde la sincronización futura necesite conservar operaciones.
@@ -47,9 +47,9 @@ Para invitados, la sesión se guarda en `localStorage` bajo `smartcart_guest_sho
 
 ### ShoppingItem
 
-Línea de una compra. En PostgreSQL F7: `id`, `shopping_session_id`, `product_name`, `quantity NUMERIC(12,3)`, `created_at` y `updated_at`. Nullable: `product_id`, `product_brand`, `product_barcode`, `product_quantity_value NUMERIC(19,4)` y `product_quantity_unit`. Los campos `product_*` son un snapshot del Product al agregarlo; un ítem manual usa `product_id = null` y conserva igualmente los datos ingresados. F7 no tiene `unit_price`, moneda, subtotal ni total.
+Línea de una compra. En PostgreSQL F8: `id`, `shopping_session_id`, `product_name`, `quantity NUMERIC(12,3)`, `unit_price NUMERIC(19,2) NULL`, `created_at` y `updated_at`. Nullable: `product_id`, `product_brand`, `product_barcode`, `product_quantity_value NUMERIC(19,4)`, `product_quantity_unit` y `unit_price`. Los campos `product_*` son un snapshot del Product al agregarlo; un ítem manual usa `product_id = null` y conserva igualmente los datos ingresados.
 
-`product_quantity_value`/`product_quantity_unit` describe la presentación del envase o producto; `quantity` describe cuántas presentaciones se agregaron. Por ejemplo, un Product “Leche 1 L” con `quantity = 3` significa tres envases de 1 L. Una referencia de catálogo repetida dentro de la misma sesión incrementa `quantity` en la fila existente; los manuales no se deduplican automáticamente. La cantidad admite hasta tres decimales, debe ser positiva y se transporta como string decimal.
+`product_quantity_value`/`product_quantity_unit` describe la presentación del envase o producto; `quantity` describe cuántas presentaciones se agregaron. `unit_price` es el precio de una unidad/presentación del ítem, no el precio por `productQuantityValue`; el caso ponderado MVP calcula simplemente `quantity × unit_price`. Una referencia de catálogo repetida dentro de la misma sesión incrementa `quantity` solo si el precio coincide; con precio diferente devuelve conflicto para que la persona ajuste el ítem explícitamente. Los manuales no se deduplican automáticamente. La cantidad admite hasta tres decimales y el precio hasta dos; ambos se transportan como strings decimales.
 
 ### PriceObservation
 
@@ -69,7 +69,7 @@ Producto esperado en una lista. Obligatorios: `id`, `shopping_list_id`, nombre o
 
 ## 4. Integridad y cálculos
 
-F7 no calcula subtotales ni totales porque todavía no existe precio. La cantidad de ítem se valida con precisión decimal exacta en servidor/local y no se persiste como float. Sesiones completadas e ítems históricos son legibles, pero no mutables ni eliminables.
+El subtotal de cada ítem y el total de sesión son derivados; no se persisten. `unit_price = null` significa “Precio pendiente” y no contribuye al total, nunca equivale a cero. Los cálculos monetarios usan enteros escalados (`BigInt`) y expresan el resultado con dos decimales; el subtotal aplica redondeo half-up a centavos cuando una cantidad de hasta tres decimales genera una fracción menor que un centavo. El resumen autenticado se calcula server-side y expone `budgetAmount`, `currency`, `itemsTotal`, `remainingBudget` y `budgetUsagePercentage`; remaining y porcentaje no se acotan matemáticamente. Sesiones completadas e ítems históricos son legibles, pero no mutables ni eliminables.
 
 ## 5. Extensibilidad y privacidad
 

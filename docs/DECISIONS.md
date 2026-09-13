@@ -251,3 +251,24 @@
 - **Motivo:** F5 necesita continuidad local sin crear usuario ni datos cloud.
 - **Consecuencias:** no existe sincronización ni importación en esta fase; el historial guest es básico y no contiene productos ni precios.
 - **Estado:** aprobada para F5.
+
+## ADR-037 — Precio por unidad y cálculo derivado
+
+- **Decisión:** `ShoppingItem.unit_price` usa `NUMERIC(19,2)` nullable y representa el precio de una unidad/presentación del ítem. Subtotales y totales se derivan con `quantity × unit_price`; `null` se muestra como “Precio pendiente” y no suma.
+- **Motivo:** habilitar control de gasto sin confundir el precio de presentación con `productQuantityValue` ni introducir todavía un modelo completo de venta por peso.
+- **Consecuencias:** no se persisten subtotales/totales; la API transporta importes como strings y los helpers usan enteros escalados, con redondeo half-up a centavos para subtotales no exactos.
+- **Estado:** aprobada para F8.
+
+## ADR-038 — Conflicto explícito de precio al fusionar catálogo
+
+- **Decisión:** una referencia de catálogo repetida fusiona cantidad solo cuando el precio coincide (incluyendo ambos `null`). Si difiere, la alta devuelve conflicto y la persona debe editar el ítem existente explícitamente.
+- **Motivo:** evitar sobrescrituras invisibles y mantener el comportamiento de doble toque de F7 sin perder control sobre el precio.
+- **Consecuencias:** el cliente recibe un mensaje accionable; los ítems manuales siguen sin deduplicarse.
+- **Estado:** aprobada para F8.
+
+## ADR-039 — Resumen confiable y umbrales visuales
+
+- **Decisión:** el resumen autenticado se calcula server-side y expone gasto, presupuesto, disponible y porcentaje. El disponible puede ser negativo y el porcentaje superar 100%; la barra visual se acota a 100%. Los estados son normal `<80%`, cerca `80–99.99%` y superado `>=100%`.
+- **Motivo:** separar decisiones financieras exactas de la presentación visual y comunicar sobrepresupuesto sin truncarlo.
+- **Consecuencias:** guest usa el mismo helper compartido localmente; una sesión sin presupuesto muestra solo gasto.
+- **Estado:** aprobada para F8.

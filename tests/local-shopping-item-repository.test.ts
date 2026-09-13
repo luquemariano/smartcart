@@ -8,6 +8,7 @@ import {
   deleteLocalShoppingItem,
   hasLocalShoppingItemForProduct,
   listLocalShoppingItems,
+  updateLocalShoppingItem,
   updateLocalShoppingItemQuantity,
 } from '@/lib/local-shopping-item-repository';
 import {
@@ -30,18 +31,27 @@ describe('local shopping item repository', () => {
     const first = addLocalShoppingItem(
       'guest-items',
       session.id,
-      { productId: product.id, quantity: '2' },
+      { productId: product.id, quantity: '2', unitPrice: '2000' },
       product,
     );
     const merged = addLocalShoppingItem(
       'guest-items',
       session.id,
-      { productId: product.id, quantity: '1.5' },
+      { productId: product.id, quantity: '1.5', unitPrice: '2000.00' },
       product,
     );
     expect(merged.id).toBe(first.id);
     expect(merged.quantity).toBe('3.5');
     expect(merged.productName).toBe('Leche');
+    expect(merged.unitPrice).toBe('2000.00');
+    expect(() =>
+      addLocalShoppingItem(
+        'guest-items',
+        session.id,
+        { productId: product.id, quantity: '1', unitPrice: '2100' },
+        product,
+      ),
+    ).toThrow('PRICE_CONFLICT');
 
     const manual = addLocalShoppingItem('guest-items', session.id, {
       productId: null,
@@ -62,6 +72,12 @@ describe('local shopping item repository', () => {
         (item) => item.id === manual.id,
       )?.quantity,
     ).toBe('1.25');
+    updateLocalShoppingItem('guest-items', manual.id, { unitPrice: '2400' });
+    expect(
+      listLocalShoppingItems('guest-items', session.id).find(
+        (item) => item.id === manual.id,
+      )?.unitPrice,
+    ).toBe('2400.00');
     expect(hasLocalShoppingItemForProduct('guest-items', product.id)).toBe(
       true,
     );

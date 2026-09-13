@@ -2,10 +2,14 @@ import { and, asc, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { shoppingItems, shoppingSessions } from '@/db/schema';
 import { addDecimalStrings } from '@/lib/decimal';
+import {
+  calculateShoppingSummary,
+  shoppingItemSubtotal,
+} from '@/lib/shopping-summary';
 import { productInputSchema } from '@/lib/product-validation';
 import {
   shoppingItemInputSchema,
-  shoppingItemQuantitySchema,
+  shoppingItemPatchSchema,
   type ShoppingItemInput,
 } from '@/lib/shopping-item-validation';
 import { getProduct, ProductNotFoundError } from '@/server/products';
@@ -17,6 +21,7 @@ import {
 export class ShoppingItemNotFoundError extends Error {}
 export class ShoppingItemCompletedError extends Error {}
 export class ShoppingItemQuantityLimitError extends Error {}
+export class ShoppingItemPriceConflictError extends Error {}
 
 const MAX_QUANTITY_SCALED = BigInt('999999999999');
 
@@ -78,11 +83,32 @@ function ensureActiveStatus(status: string) {
 
 export async function listShoppingItems(userId: string, sessionId: string) {
   await getShoppingSession(userId, sessionId);
-  return db
+  const items = await db
     .select()
     .from(shoppingItems)
     .where(eq(shoppingItems.shoppingSessionId, sessionId))
     .orderBy(asc(shoppingItems.createdAt), asc(shoppingItems.id));
+  return items.map((item) => ({
+    ...item,
+    subtotal: shoppingItemSubtotal(item),
+  }));
+}
+
+export async function getShoppingSessionSummary(
+  userId: string,
+  sessionId: string,
+) {
+  const session = await getShoppingSession(userId, sessionId);
+  const items = await listShoppingItems(userId, sessionId);
+  return {
+    session,
+    items,
+    summary: calculateShoppingSummary(
+      session.budgetAmount,
+      session.currency,
+      items,
+    ),
+  };
 }
 
 export async function addShoppingItem(
@@ -123,6 +149,34 @@ export async function addShoppingItem(
       ensureActiveStatus(session.status);
 
       const now = new Date();
+      const existing =
+        parsed.productId === null
+          ? null
+          : (
+              await tx
+                .select()
+                .from(shoppingItems)
+                .where(
+                  and(
+                    eq(shoppingItems.shoppingSessionId, sessionId),
+                    eq(shoppingItems.productId, parsed.productId),
+                  ),
+                )
+                .limit(1)
+            )[0];
+      if (existing) {
+        if (existing.unitPrice !== parsed.unitPrice)
+          throw new ShoppingItemPriceConflictError();
+        const [item] = await tx
+          .update(shoppingItems)
+          .set({
+            quantity: sql`${shoppingItems.quantity} + cast(${parsed.quantity} as numeric)`,
+            updatedAt: now,
+          })
+          .where(eq(shoppingItems.id, existing.id))
+          .returning();
+        return item;
+      }
       const [item] = await tx
         .insert(shoppingItems)
         .values({
@@ -130,15 +184,9 @@ export async function addShoppingItem(
           shoppingSessionId: sessionId,
           ...catalogSnapshot,
           quantity: parsed.quantity,
+          unitPrice: parsed.unitPrice,
           createdAt: now,
           updatedAt: now,
-        })
-        .onConflictDoUpdate({
-          target: [shoppingItems.shoppingSessionId, shoppingItems.productId],
-          set: {
-            quantity: sql`${shoppingItems.quantity} + cast(${parsed.quantity} as numeric)`,
-            updatedAt: now,
-          },
         })
         .returning();
       return item;
@@ -175,13 +223,27 @@ export async function updateShoppingItemQuantity(
   itemId: string,
   input: unknown,
 ) {
-  const parsed = shoppingItemQuantitySchema.parse(input);
+  return updateShoppingItem(userId, itemId, input);
+}
+
+export async function updateShoppingItem(
+  userId: string,
+  itemId: string,
+  input: unknown,
+) {
+  const parsed = shoppingItemPatchSchema.parse(input);
   const row = await getOwnedItem(userId, itemId);
   ensureActiveStatus(row.session.status);
   try {
+    const changes = {
+      ...(parsed.quantity === undefined ? {} : { quantity: parsed.quantity }),
+      ...(parsed.unitPrice === undefined
+        ? {}
+        : { unitPrice: parsed.unitPrice }),
+    };
     const [item] = await db
       .update(shoppingItems)
-      .set({ quantity: parsed.quantity, updatedAt: new Date() })
+      .set({ ...changes, updatedAt: new Date() })
       .where(eq(shoppingItems.id, itemId))
       .returning();
     return item;

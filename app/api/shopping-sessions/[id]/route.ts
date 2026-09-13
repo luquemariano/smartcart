@@ -4,11 +4,11 @@ import { shoppingSessionPatchSchema } from '@/lib/shopping-session-validation';
 import { getServerSession } from '@/lib/server-session';
 import {
   finishShoppingSession,
-  getShoppingSession,
   ShoppingSessionCompletedError,
   ShoppingSessionNotFoundError,
   updateShoppingSessionBudget,
 } from '@/server/shopping-sessions';
+import { getShoppingSessionSummary } from '@/server/shopping-items';
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -22,9 +22,9 @@ export async function GET(_request: Request, context: Context) {
   if (!user)
     return NextResponse.json({ error: 'No autenticado.' }, { status: 401 });
   try {
-    return NextResponse.json({
-      session: await getShoppingSession(user.id, (await context.params).id),
-    });
+    return NextResponse.json(
+      await getShoppingSessionSummary(user.id, (await context.params).id),
+    );
   } catch (error) {
     if (error instanceof ShoppingSessionNotFoundError)
       return NextResponse.json(
