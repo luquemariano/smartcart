@@ -39,7 +39,7 @@ Los supermercados autenticados usan `/api/stores` y `/api/stores/:id`. Cada oper
 
 Los productos autenticados usan `/api/products` y `/api/products/:id`, con búsqueda opcional `?q=`. El catálogo es personal, no global: cada operación filtra por `owner_user_id`. En F4 se evitó la relación con Store, ShoppingSession, ShoppingItem o PriceObservation.
 
-Las sesiones autenticadas usan `/api/shopping-sessions`, `/active` y `/:id`. `store_id` es nullable y, cuando se informa, el servidor verifica que el Store pertenezca al mismo usuario. PostgreSQL aplica una FK `RESTRICT` y un índice único parcial para impedir más de una sesión `active` por propietario. F5 no relaciona todavía sesiones con productos ni precios.
+Las sesiones autenticadas usan `/api/shopping-sessions`, `/active` y `/:id`. `store_id` es nullable y, cuando se informa, el servidor verifica que el Store pertenezca al mismo usuario. PostgreSQL aplica una FK `RESTRICT` y un índice único parcial para impedir más de una sesión `active` por propietario. F6 agrega presupuesto opcional como `NUMERIC(19,2)` nullable y `currency VARCHAR(3) NOT NULL DEFAULT 'ARS'`; la API lo transporta como string decimal y no acepta moneda del cliente. La edición y eliminación solo aplican a sesiones activas; al finalizar se conserva el valor. F6 no relaciona todavía sesiones con productos, ítems ni precios.
 
 La eliminación de Store ahora se rechaza cuando existe una sesión asociada, incluso si está `completed`; esto conserva el contexto para el futuro historial sin introducir soft delete prematuramente.
 
@@ -53,7 +53,7 @@ F0 fijó el contrato conceptual; F2 añadió identidad, F3 supermercados, F4 cat
 
 ## 7. Dinero, privacidad e imágenes
 
-Los importes no se calculan con punto flotante binario. Se recomienda `NUMERIC`/`DECIMAL` en PostgreSQL con escala documentada, junto con código de moneda ISO 4217. La precisión exacta se definirá en DATA_MODEL y se respetará en UI y servidor.
+Los importes no se calculan con punto flotante binario. El presupuesto F6 usa `NUMERIC(19,2)` en PostgreSQL y se valida/transporta como string decimal canónico en servidor y repositorio guest. La conversión a `Number` solo ocurre en el límite de presentación de `Intl.NumberFormat`, nunca para persistir ni para calcular. La entrada usa punto decimal sin separadores de miles, rechaza cero, negativos, valores especiales y más de dos decimales; `ARS` es la moneda fija inicial y se muestra con locale `es-AR`.
 
 No se almacenan fotografías permanentemente. Una futura captura seguirá `captura → procesamiento → extracción estructurada → descarte`. Si un flujo excepcional requiriera retener una imagen, deberá existir una razón explícita, consentimiento, política de retención y control de acceso.
 

@@ -1,6 +1,6 @@
 # SmartCart — Roadmap
 
-Las fases son pequeñas y verificables. F5 es la fase actual completada; ninguna fase posterior se considera implementada por existir en este documento.
+Las fases son pequeñas y verificables. F6 es la fase actual completada; ninguna fase posterior se considera implementada por existir en este documento.
 
 ## F0 — Foundation
 
@@ -67,10 +67,12 @@ Las fases son pequeñas y verificables. F5 es la fase actual completada; ninguna
 
 ## F6 — Carrito y presupuesto
 
+- **Estado:** completada solo en su alcance de presupuesto; los ítems y cálculos quedan explícitamente fuera.
 - **Objetivo:** controlar gasto en tiempo real.
-- **Entregables:** ítems, cantidad, precio, subtotales, total, presupuesto, edición, eliminación y resumen/finalización.
+- **Entregables F6 implementados:** presupuesto opcional de la sesión, alta/edición/eliminación, validación decimal exacta, persistencia cloud/guest, restauración, visualización en activa e historial y conservación al finalizar.
+- **Fuera de alcance F6:** ítems, cantidad comprada, precio, subtotales, total, resumen calculado y bloqueo por presupuesto.
 - **Dependencias:** F5.
-- **Cierre:** cálculos decimales validados y flujo completo manual.
+- **Cierre:** flujo manual de presupuesto validado para cuenta e invitado; las operaciones de dinero se conservan como strings decimales y PostgreSQL usa `NUMERIC(19,2)`.
 
 ## F7 — Captura/lectura de producto
 

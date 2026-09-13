@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof z.ZodError)
       return NextResponse.json(
-        { error: 'Revisá el supermercado seleccionado.' },
+        { error: 'Revisá el supermercado y el presupuesto.' },
         { status: 400 },
       );
     if (error instanceof ActiveShoppingSessionError)

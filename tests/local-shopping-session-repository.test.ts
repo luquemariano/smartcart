@@ -11,8 +11,16 @@ describe('local shopping session repository', () => {
   beforeEach(() => window.localStorage.clear());
 
   it('restores one active session, finishes it idempotently and keeps history', () => {
-    const session = startLocalShoppingSession('guest-a', 'store-a');
+    const session = startLocalShoppingSession(
+      'guest-a',
+      'store-a',
+      '100000.50',
+    );
     expect(getActiveLocalShoppingSession('guest-a')?.id).toBe(session.id);
+    expect(getActiveLocalShoppingSession('guest-a')?.budgetAmount).toBe(
+      '100000.50',
+    );
+    expect(getActiveLocalShoppingSession('guest-a')?.currency).toBe('ARS');
     expect(getPendingGuestShoppingSessions('guest-a')).toHaveLength(1);
     expect(() => startLocalShoppingSession('guest-a', null)).toThrow(
       'ACTIVE_SHOPPING_SESSION',

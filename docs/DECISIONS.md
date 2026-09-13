@@ -189,6 +189,27 @@
 - **Consecuencias:** finalizar es necesario antes de iniciar otra; PostgreSQL refuerza la regla con un índice único parcial y guest la refuerza en su repositorio.
 - **Estado:** aprobada para F5.
 
+## ADR-030 — Presupuesto decimal opcional por sesión
+
+- **Decisión:** agregar `budget_amount NUMERIC(19,2)` nullable a `ShoppingSession` y exponerlo como string decimal canónico. Campo ausente, `null` o entrada vacía significan “sin presupuesto”; si se informa, el valor debe ser mayor que cero, tener como máximo dos decimales y no superar `9999999999999999.99`.
+- **Motivo:** evitar pérdida de precisión monetaria y permitir iniciar una compra con o sin presupuesto.
+- **Consecuencias:** no se persisten floats; se rechazan coma decimal, separadores de miles, valores negativos, cero, especiales y más de dos decimales. El presupuesto no bloquea la finalización y F6 no calcula totales porque aún no existen ítems.
+- **Estado:** aprobada para F6.
+
+## ADR-031 — ARS como moneda inicial del presupuesto
+
+- **Decisión:** agregar `currency VARCHAR(3) NOT NULL DEFAULT 'ARS'`; el servidor asigna `ARS` y no acepta `currency` del cliente. La UI usa `Intl.NumberFormat('es-AR')` sin selector de moneda.
+- **Motivo:** entregar una experiencia local coherente sin abrir todavía reglas multi-moneda.
+- **Consecuencias:** la columna queda preparada para una futura evolución, pero F6 solo permite ARS y toda sesión existente recibe ese valor por defecto durante la migración.
+- **Estado:** aprobada para F6.
+
+## ADR-032 — Presupuesto inmutable al finalizar
+
+- **Decisión:** una sesión `completed` conserva `budget_amount` y `currency`, pero rechaza cambios o eliminación del presupuesto con conflicto `409`.
+- **Motivo:** el presupuesto forma parte del contexto histórico de la compra y no debe alterarse después del cierre.
+- **Consecuencias:** la edición/eliminación solo está disponible mientras la sesión está activa, tanto para cuentas como para invitados; finalizar sigue siendo posible con o sin presupuesto.
+- **Estado:** aprobada para F6.
+
 ## ADR-028 — Store nullable y protegido por referencia
 
 - **Decisión:** una sesión puede no tener Store; si lo tiene, debe pertenecer al mismo usuario. La FK usa `ON DELETE RESTRICT`.

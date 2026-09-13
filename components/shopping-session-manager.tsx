@@ -2,15 +2,21 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
+  finishLocalShoppingSession,
   getActiveLocalShoppingSession,
   listLocalShoppingSessions,
   startLocalShoppingSession,
-  finishLocalShoppingSession,
+  updateLocalShoppingSessionBudget,
   type LocalShoppingSession,
 } from '@/lib/local-shopping-session-repository';
+import { formatMoney } from '@/lib/money';
+import {
+  budgetShoppingSessionSchema,
+  startShoppingSessionSchema,
+} from '@/lib/shopping-session-validation';
 import { listLocalStores, type LocalStore } from '@/lib/local-store-repository';
 
-type SessionView = LocalShoppingSession & { ownerUserId?: string };
+type SessionView = LocalShoppingSession;
 type StoreView = Pick<LocalStore, 'id' | 'name' | 'branchName'>;
 type Mode = 'guest' | 'authenticated';
 
@@ -37,6 +43,9 @@ export function ShoppingSessionManager({
   const [sessions, setSessions] = useState<SessionView[]>([]);
   const [active, setActive] = useState<SessionView | null>(null);
   const [storeId, setStoreId] = useState('');
+  const [budgetInput, setBudgetInput] = useState('');
+  const [budgetEditOpen, setBudgetEditOpen] = useState(false);
+  const [budgetEditValue, setBudgetEditValue] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -47,9 +56,11 @@ export function ShoppingSessionManager({
     if (mode === 'guest' && guestId) {
       const localStores = listLocalStores(guestId);
       const localSessions = listLocalShoppingSessions(guestId);
+      const localActive = getActiveLocalShoppingSession(guestId);
       setStores(localStores);
       setSessions(localSessions);
-      setActive(getActiveLocalShoppingSession(guestId));
+      setActive(localActive);
+      setBudgetEditValue(localActive?.budgetAmount ?? '');
       setLoading(false);
       return;
     }
@@ -64,9 +75,13 @@ export function ShoppingSessionManager({
         const storesData = await storesResponse.json();
         const sessionsData = await sessionsResponse.json();
         const activeData = await activeResponse.json();
-        setStores(storesResponse.ok ? (storesData.stores ?? []) : []);
-        setSessions(sessionsResponse.ok ? (sessionsData.sessions ?? []) : []);
-        setActive(activeResponse.ok ? (activeData.session ?? null) : null);
+        const nextActive = activeResponse.ok
+          ? (activeData?.session ?? null)
+          : null;
+        setStores(storesResponse.ok ? (storesData?.stores ?? []) : []);
+        setSessions(sessionsResponse.ok ? (sessionsData?.sessions ?? []) : []);
+        setActive(nextActive);
+        setBudgetEditValue(nextActive?.budgetAmount ?? '');
         if (!storesResponse.ok || !sessionsResponse.ok || !activeResponse.ok) {
           setMessage('No pudimos cargar tus compras.');
         }
@@ -86,30 +101,89 @@ export function ShoppingSessionManager({
   }, [load]);
 
   async function start() {
+    const parsed = startShoppingSessionSchema.safeParse({
+      storeId: storeId || null,
+      budgetAmount: budgetInput,
+    });
+    if (!parsed.success) {
+      setMessage(
+        parsed.error.issues[0]?.message ?? 'El presupuesto no es válido.',
+      );
+      return;
+    }
     setBusy(true);
     setMessage('');
     try {
       if (mode === 'guest' && guestId) {
-        startLocalShoppingSession(guestId, storeId || null);
+        startLocalShoppingSession(
+          guestId,
+          parsed.data.storeId,
+          parsed.data.budgetAmount,
+        );
       } else {
         const response = await fetch('/api/shopping-sessions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ storeId: storeId || null }),
+          body: JSON.stringify(parsed.data),
         });
         if (!response.ok) {
           const data = await response.json();
           throw new Error(data.error ?? 'No pudimos iniciar la compra.');
         }
       }
+      setBudgetInput('');
       await load();
     } catch (error) {
       setMessage(
-        error instanceof Error && error.message.includes('activa')
+        error instanceof Error
           ? error.message
-          : error instanceof Error
-            ? error.message
-            : 'No pudimos iniciar la compra.',
+          : 'No pudimos iniciar la compra.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveBudget() {
+    if (!active) return;
+    const parsed = budgetShoppingSessionSchema.safeParse({
+      budgetAmount: budgetEditValue,
+    });
+    if (!parsed.success) {
+      setMessage(
+        parsed.error.issues[0]?.message ?? 'El presupuesto no es válido.',
+      );
+      return;
+    }
+    setBusy(true);
+    setMessage('');
+    try {
+      if (mode === 'guest' && guestId) {
+        updateLocalShoppingSessionBudget(
+          guestId,
+          active.id,
+          parsed.data.budgetAmount,
+        );
+      } else {
+        const response = await fetch(`/api/shopping-sessions/${active.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(parsed.data),
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(
+            data.error ?? 'No pudimos actualizar el presupuesto.',
+          );
+        }
+      }
+      setBudgetEditOpen(false);
+      await load();
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'No pudimos actualizar el presupuesto.',
       );
     } finally {
       setBusy(false);
@@ -131,6 +205,7 @@ export function ShoppingSessionManager({
         });
         if (!response.ok) throw new Error('No pudimos finalizar la compra.');
       }
+      setBudgetEditOpen(false);
       await load();
     } catch (error) {
       setMessage(
@@ -171,6 +246,70 @@ export function ShoppingSessionManager({
           <p className="mt-1 text-sm text-slate-600">
             Iniciada {formatDate(active.startedAt)}
           </p>
+          <div className="mt-4 rounded-lg bg-white/70 p-3">
+            <p className="text-sm font-semibold text-slate-700">Presupuesto</p>
+            <p className="mt-1 text-lg font-bold text-slate-950">
+              {active.budgetAmount
+                ? formatMoney(active.budgetAmount, active.currency)
+                : 'Sin presupuesto definido'}
+            </p>
+            {budgetEditOpen ? (
+              <div className="mt-3 space-y-2">
+                <input
+                  aria-label="Presupuesto de la compra"
+                  className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3"
+                  inputMode="decimal"
+                  onChange={(event) => setBudgetEditValue(event.target.value)}
+                  placeholder="100000.00"
+                  value={budgetEditValue}
+                />
+                <div className="flex gap-3">
+                  <button
+                    className="min-h-10 flex-1 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    disabled={busy}
+                    onClick={() => void saveBudget()}
+                    type="button"
+                  >
+                    Guardar presupuesto
+                  </button>
+                  <button
+                    className="min-h-10 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700"
+                    onClick={() => setBudgetEditOpen(false)}
+                    type="button"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-3 flex flex-wrap gap-3">
+                <button
+                  className="text-sm font-semibold text-blue-700"
+                  onClick={() => {
+                    setBudgetEditValue(active.budgetAmount ?? '');
+                    setBudgetEditOpen(true);
+                  }}
+                  type="button"
+                >
+                  {active.budgetAmount
+                    ? 'Cambiar presupuesto'
+                    : 'Definir presupuesto'}
+                </button>
+                {active.budgetAmount && (
+                  <button
+                    className="text-sm font-semibold text-slate-600"
+                    onClick={() => {
+                      setBudgetEditValue('');
+                      setBudgetEditOpen(true);
+                    }}
+                    type="button"
+                  >
+                    Quitar presupuesto
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           <p className="mt-3 text-sm text-slate-600">
             Todavía no hay productos ni precios en esta etapa.
           </p>
@@ -211,6 +350,20 @@ export function ShoppingSessionManager({
               ))}
             </select>
           </label>
+          <label className="mt-4 block text-sm font-medium text-slate-700">
+            Presupuesto (opcional)
+            <input
+              aria-label="Presupuesto opcional"
+              className="mt-1 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3"
+              inputMode="decimal"
+              onChange={(event) => setBudgetInput(event.target.value)}
+              placeholder="100000.00"
+              value={budgetInput}
+            />
+            <span className="mt-1 block text-xs font-normal text-slate-500">
+              Importe en ARS, sin separadores de miles y con punto decimal.
+            </span>
+          </label>
           <button
             className="mt-4 min-h-11 w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white disabled:opacity-50"
             disabled={busy}
@@ -235,7 +388,10 @@ export function ShoppingSessionManager({
                   {storeLabel(
                     stores.find((store) => store.id === session.storeId),
                   )}{' '}
-                  · {formatDate(session.startedAt)}
+                  · {formatDate(session.startedAt)} ·{' '}
+                  {session.budgetAmount
+                    ? `Presupuesto: ${formatMoney(session.budgetAmount, session.currency)}`
+                    : 'Sin presupuesto'}
                 </li>
               ))}
           </ul>

@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-**F5 — Sesión de compra (completada).**
+**F6 — Presupuesto de la sesión (completada).**
 
 ## Qué existe hoy
 
@@ -42,36 +42,38 @@
 - Sesiones guest locales persistentes entre refresh/reapertura, con historial básico y helpers de futura importación.
 - Eliminación de Store protegida por FK `RESTRICT` cuando existe cualquier sesión asociada.
 - Fechas persistidas como timestamps UTC y formateadas en zona local para la UI.
+- Presupuesto opcional por sesión en `NUMERIC(19,2)`, expuesto como string decimal y con `ARS` por defecto.
+- Inicio, edición, eliminación y conservación del presupuesto al finalizar, tanto en PostgreSQL como en el repositorio guest local.
+- Sesiones finalizadas inmutables respecto del presupuesto; la UI no calcula todavía ítems, subtotales ni total.
 
 ## Qué no existe
 
-- No existen productos dentro de una compra, precios, cantidades compradas, carrito, presupuesto, historial de precios, sincronización ni migración guest→cuenta.
+- No existen productos dentro de una compra, precios, cantidades compradas, carrito, subtotales, total, historial de precios, sincronización ni migración guest→cuenta.
 - Google OAuth no fue probado con credenciales reales ni configuración externa de Google Cloud.
 - La baja de supermercados es hard delete por ahora; deberá revisarse cuando exista historial.
 - La baja de productos es hard delete por ahora; deberá revisarse cuando exista historial o referencias.
 - Las sesiones no tienen delete; los Stores referenciados no pueden borrarse, aunque todavía no existe soft delete.
-- No se realizaron commits ni push durante F5; el commit anterior corresponde al cierre de F4.
+- No se realizaron commits ni push durante F6; el HEAD existente corresponde al cierre de F5.
 
 ## Decisiones aprobadas
 
 Producto web responsive mobile-first, con evolución a PWA; invitado sin registro; cuenta opcional con Google y email; Better Auth sobre PostgreSQL; monolito Next.js con TypeScript/App Router/Tailwind; almacenamiento local preparado para IndexedDB; autorización server-side; imágenes efímeras y datos estructurados; sin monetización, scraping, promociones ni IA compleja en MVP. Better Auth usa sus migraciones oficiales; no se incorporó ORM adicional ni se crearon tablas de negocio. F2.2 conserva el guest ID tras autenticación para una futura importación explícita.
 
-El producto inicial es un asistente personal de compra, no un comparador general de supermercados. F3, F4 y F5 mantienen el alcance limitado a contexto de compra, catálogo personal y sesión vacía.
+El producto inicial es un asistente personal de compra, no un comparador general de supermercados. F3, F4, F5 y F6 mantienen el alcance limitado a contexto de compra, catálogo personal, sesión y presupuesto, sin ítems ni precios.
 
 ## Riesgos abiertos
 
 - Configurar y probar OAuth real de Google.
 - Endurecer verificación/recuperación de email antes de producción.
-- Definir precisión monetaria final y reglas de redondeo por moneda.
 - Decidir proveedor de PostgreSQL y hosting.
 - Diseñar conflictos de migración invitado→cuenta y sincronización multi-dispositivo.
 - Validar qué capacidades PWA/offline son confiables en navegadores móviles objetivo.
-- Definir reglas de precios por peso/volumen cuando llegue F6/F8.
+- Definir reglas de precios por peso/volumen cuando llegue F7/F8.
 - Evaluar el riesgo de dependencias de desarrollo de Drizzle Kit: `npm install` reporta 4 vulnerabilidades moderadas transitivas.
 
 ## Siguiente fase
 
-Puede abordarse **F6 — Carrito y presupuesto**, manteniendo fuera captura, OCR, comparación e historial hasta sus fases correspondientes.
+Puede abordarse **F7 — Captura/lectura de producto**, manteniendo fuera precios, subtotales, total, captura asistida, comparación e historial hasta sus fases correspondientes.
 
 ## Instrucción de continuidad
 

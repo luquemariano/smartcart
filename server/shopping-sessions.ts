@@ -2,6 +2,7 @@ import { and, desc, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { shoppingSessions } from '@/db/schema';
 import { getStore } from '@/server/stores';
+import { DEFAULT_CURRENCY, serializeMoney } from '@/lib/money';
 import {
   startShoppingSessionSchema,
   type StartShoppingSessionInput,
@@ -10,6 +11,7 @@ import {
 export class ShoppingSessionNotFoundError extends Error {}
 export class ActiveShoppingSessionError extends Error {}
 export class ShoppingSessionStoreError extends Error {}
+export class ShoppingSessionCompletedError extends Error {}
 
 function isConstraintViolation(error: unknown, code: string): boolean {
   const candidates = [
@@ -52,6 +54,8 @@ export async function startShoppingSession(
         ownerUserId: userId,
         storeId: parsed.storeId,
         status: 'active',
+        budgetAmount: serializeMoney(parsed.budgetAmount),
+        currency: DEFAULT_CURRENCY,
         startedAt: now,
         createdAt: now,
         updatedAt: now,
@@ -123,4 +127,32 @@ export async function finishShoppingSession(userId: string, sessionId: string) {
     )
     .returning();
   return session ?? getShoppingSession(userId, sessionId);
+}
+
+export async function updateShoppingSessionBudget(
+  userId: string,
+  sessionId: string,
+  budgetAmount: string | null,
+) {
+  const existing = await getShoppingSession(userId, sessionId);
+  if (existing.status === 'completed')
+    throw new ShoppingSessionCompletedError();
+  const now = new Date();
+  const [session] = await db
+    .update(shoppingSessions)
+    .set({
+      budgetAmount: serializeMoney(budgetAmount),
+      currency: DEFAULT_CURRENCY,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(shoppingSessions.id, sessionId),
+        eq(shoppingSessions.ownerUserId, userId),
+        eq(shoppingSessions.status, 'active'),
+      ),
+    )
+    .returning();
+  if (!session) throw new ShoppingSessionNotFoundError();
+  return session;
 }

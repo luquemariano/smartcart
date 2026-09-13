@@ -1,11 +1,13 @@
 import {
   foreignKey,
   index,
+  numeric,
   pgEnum,
   pgTable,
   text,
   timestamp,
   uniqueIndex,
+  varchar,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { stores } from './stores';
@@ -22,6 +24,8 @@ export const shoppingSessions = pgTable(
     ownerUserId: text('owner_user_id').notNull(),
     storeId: text('store_id'),
     status: shoppingSessionStatus('status').notNull().default('active'),
+    budgetAmount: numeric('budget_amount', { precision: 19, scale: 2 }),
+    currency: varchar('currency', { length: 3 }).notNull().default('ARS'),
     startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })

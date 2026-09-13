@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { finishShoppingSessionSchema } from '@/lib/shopping-session-validation';
+import { shoppingSessionPatchSchema } from '@/lib/shopping-session-validation';
 import { getServerSession } from '@/lib/server-session';
 import {
   finishShoppingSession,
   getShoppingSession,
+  ShoppingSessionCompletedError,
   ShoppingSessionNotFoundError,
+  updateShoppingSessionBudget,
 } from '@/server/shopping-sessions';
 
 type Context = { params: Promise<{ id: string }> };
@@ -38,20 +40,34 @@ export async function PATCH(request: Request, context: Context) {
   if (!user)
     return NextResponse.json({ error: 'No autenticado.' }, { status: 401 });
   try {
-    finishShoppingSessionSchema.parse(await request.json());
+    const input = shoppingSessionPatchSchema.parse(await request.json());
+    const sessionId = (await context.params).id;
+    if ('status' in input)
+      return NextResponse.json({
+        session: await finishShoppingSession(user.id, sessionId),
+      });
     return NextResponse.json({
-      session: await finishShoppingSession(user.id, (await context.params).id),
+      session: await updateShoppingSessionBudget(
+        user.id,
+        sessionId,
+        input.budgetAmount,
+      ),
     });
   } catch (error) {
     if (error instanceof z.ZodError)
       return NextResponse.json(
-        { error: 'Solo podés finalizar una compra activa.' },
+        { error: 'Revisá la acción y el presupuesto.' },
         { status: 400 },
       );
     if (error instanceof ShoppingSessionNotFoundError)
       return NextResponse.json(
         { error: 'Compra no encontrada.' },
         { status: 404 },
+      );
+    if (error instanceof ShoppingSessionCompletedError)
+      return NextResponse.json(
+        { error: 'Una compra finalizada no puede cambiar su presupuesto.' },
+        { status: 409 },
       );
     throw error;
   }

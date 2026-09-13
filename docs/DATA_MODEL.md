@@ -4,7 +4,7 @@
 
 - Cada entidad persistida tiene `id` estable, `created_at` y `updated_at` cuando corresponda.
 - Fechas y horas se almacenan en UTC; la UI presenta la zona local de la persona.
-- Los importes se almacenan como `NUMERIC(19,4)` (o precisión equivalente acordada en implementación), nunca como `float`. Cada importe persistido lleva `currency_code` ISO 4217; inicialmente se espera `ARS`.
+- Los importes de líneas y observaciones futuras se reservan como `NUMERIC(19,4)` (o precisión equivalente acordada en su implementación), nunca como `float`. El presupuesto de `ShoppingSession` está definido en F6 como `NUMERIC(19,2)`. Cada importe persistido lleva código de moneda ISO 4217; inicialmente se usa `ARS`.
 - Cantidades usan `NUMERIC(19,4)` para admitir fracciones futuras. `unit_code` identifica unidad (por ejemplo `unit`, `kg`, `g`, `l`, `ml`).
 - Nombres ingresados manualmente son válidos aunque no exista código de barras.
 - `deleted_at` puede usarse para bajas lógicas donde la sincronización futura necesite conservar operaciones.
@@ -37,9 +37,11 @@ Cantidad y unidad se guardan separadas. La cantidad acepta hasta cuatro decimale
 
 ### ShoppingSession
 
-Compra concreta en curso o finalizada. En PostgreSQL F5: `id`, `owner_user_id`, `status`, `started_at`, `created_at` y `updated_at`; `status` es un enum pequeño con `active` y `completed`. Nullable: `store_id` y `finished_at`. Las fechas se almacenan como `timestamp with time zone` en UTC.
+Compra concreta en curso o finalizada. En PostgreSQL F6: `id`, `owner_user_id`, `status`, `started_at`, `created_at`, `updated_at`, `budget_amount NUMERIC(19,2)` nullable y `currency VARCHAR(3) NOT NULL DEFAULT 'ARS'`; `status` es un enum pequeño con `active` y `completed`. Nullable: `store_id` y `finished_at`. Las fechas se almacenan como `timestamp with time zone` en UTC.
 
 `store_id` tiene FK a `stores.id` con `ON DELETE RESTRICT`. La aplicación valida además que el Store pertenezca al mismo `owner_user_id`; no es válido asociar una sesión de A a un Store de B. Un índice único parcial sobre `owner_user_id WHERE status = 'active'` garantiza como máximo una sesión activa por usuario. Una segunda solicitud de inicio devuelve conflicto 409. No existe todavía relación con Product ni ShoppingItem.
+
+El presupuesto es opcional: campo ausente, `null` o entrada vacía significan “sin presupuesto”. Si se informa, debe ser mayor que cero, admitir como máximo dos decimales y no superar el límite representable razonable (`9999999999999999.99`). La API recibe y devuelve strings decimales canónicos, por ejemplo `"100000.50"`; no acepta separadores de miles, coma decimal, valores negativos, cero, `NaN`, `Infinity` ni más de dos decimales. La UI acepta el mismo formato y presenta con `Intl.NumberFormat('es-AR')`. F6 usa `ARS` sin selector de moneda. Una sesión `completed` conserva su presupuesto y no permite modificarlo.
 
 Para invitados, la sesión se guarda en `localStorage` bajo `smartcart_guest_shopping_sessions_v1:<guestId>`, con el mismo estado y fechas ISO UTC. El repositorio permite una sesión activa, finalización idempotente, historial básico y futura limpieza explícita; no crea filas PostgreSQL.
 

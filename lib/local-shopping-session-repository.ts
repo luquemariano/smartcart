@@ -1,9 +1,13 @@
+import { serializeMoney } from '@/lib/money';
+
 export type LocalShoppingSessionStatus = 'active' | 'completed';
 
 export type LocalShoppingSession = {
   id: string;
   storeId: string | null;
   status: LocalShoppingSessionStatus;
+  budgetAmount: string | null;
+  currency: string;
   startedAt: string;
   finishedAt: string | null;
   createdAt: string;
@@ -22,7 +26,13 @@ function read(guestId: string): LocalShoppingSession[] {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw) as LocalShoppingSession[];
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed)
+      ? parsed.map((session) => ({
+          ...session,
+          budgetAmount: session.budgetAmount ?? null,
+          currency: session.currency ?? 'ARS',
+        }))
+      : [];
   } catch {
     return [];
   }
@@ -47,6 +57,7 @@ export function getActiveLocalShoppingSession(
 export function startLocalShoppingSession(
   guestId: string,
   storeId: string | null,
+  budgetAmount: string | null = null,
 ): LocalShoppingSession {
   if (getActiveLocalShoppingSession(guestId)) {
     throw new Error('ACTIVE_SHOPPING_SESSION');
@@ -56,6 +67,8 @@ export function startLocalShoppingSession(
     id: crypto.randomUUID(),
     storeId,
     status: 'active',
+    budgetAmount: serializeMoney(budgetAmount),
+    currency: 'ARS',
     startedAt: now,
     finishedAt: null,
     createdAt: now,
@@ -63,6 +76,29 @@ export function startLocalShoppingSession(
   };
   write(guestId, [...read(guestId), session]);
   return session;
+}
+
+export function updateLocalShoppingSessionBudget(
+  guestId: string,
+  sessionId: string,
+  budgetAmount: string | null,
+): LocalShoppingSession {
+  const sessions = read(guestId);
+  const existing = sessions.find((session) => session.id === sessionId);
+  if (!existing) throw new Error('SHOPPING_SESSION_NOT_FOUND');
+  if (existing.status === 'completed')
+    throw new Error('COMPLETED_SHOPPING_SESSION');
+  const updated: LocalShoppingSession = {
+    ...existing,
+    budgetAmount: serializeMoney(budgetAmount),
+    currency: 'ARS',
+    updatedAt: new Date().toISOString(),
+  };
+  write(
+    guestId,
+    sessions.map((session) => (session.id === sessionId ? updated : session)),
+  );
+  return updated;
 }
 
 export function finishLocalShoppingSession(
