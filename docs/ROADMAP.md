@@ -11,10 +11,11 @@ Las fases son pequeñas y verificables. F0 es la fase actual; ninguna fase poste
 
 ## F1 — Bootstrap técnico
 
+- **Estado:** implementación completada; cierre operativo pendiente de Docker Desktop.
 - **Objetivo:** crear la base ejecutable del monolito.
-- **Entregables:** Next.js + TypeScript + App Router, Tailwind, configuración de calidad, Docker para desarrollo, configuración de entornos y esqueleto modular mínimo.
+- **Entregables:** Next.js 16.3.5 + TypeScript + App Router, Tailwind 4, ESLint 9, Prettier, Docker multi-stage, Compose con PostgreSQL 17, variables de entorno, manifest PWA base, página técnica y health endpoint.
 - **Dependencias:** F0.
-- **Cierre:** aplicación arranca, checks básicos pasan, secretos están fuera del repo y la estructura coincide con ARCHITECTURE.
+- **Cierre:** pendiente únicamente de levantar Docker Desktop y verificar PostgreSQL healthy y la aplicación dentro de Compose. Los demás checks y verificaciones locales pasan.
 
 ## F2 — Identidad y modo invitado
 

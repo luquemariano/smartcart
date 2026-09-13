@@ -1,0 +1,35 @@
+services:
+  web:
+    build: .
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-smartcart}:${POSTGRES_PASSWORD:-smartcart_local_only}@db:5432/${POSTGRES_DB:-smartcart}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - smartcart
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smartcart}
+      POSTGRES_USER: ${POSTGRES_USER:-smartcart}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smartcart_local_only}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - smartcart
+
+volumes:
+  postgres_data:
+
+networks:
+  smartcart:
