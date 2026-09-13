@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-**F1 — Bootstrap técnico (implementación completada; cierre operativo pendiente).**
+**F2.1 — Infraestructura de identidad (completada).**
 
 ## Qué existe hoy
 
@@ -13,23 +13,31 @@
 - Dockerfile multi-stage y Compose con aplicación y PostgreSQL 17, volumen, red interna y healthcheck.
 - Manifest web e icono SVG placeholder para preparar la evolución a PWA.
 - Scripts de desarrollo, build, lint, typecheck y formato.
+- Better Auth 1.7.4 con PostgreSQL directo mediante `pg` y handler App Router.
+- Email/password habilitado sin verificación temporal.
+- Google OAuth preparado de forma condicional por variables de entorno.
+- Identidad invitada local en `localStorage`, sin usuario ni sesión Better Auth.
+- Tests mínimos con Vitest para crear, reutilizar y resetear la identidad invitada.
+- Migración oficial aplicada y tablas `user`, `session`, `account` y `verification` verificadas en PostgreSQL.
+- Signup/signin email verificados contra el stack Docker con una cuenta temporal eliminada después de la prueba.
 
 ## Qué no existe
 
 - No existen autenticación, usuarios, sesiones invitadas, tablas ni migraciones de negocio.
 - No existen carrito, supermercados, productos, historial, OCR, cámara, IndexedDB ni service worker offline complejo.
+- No se han creado tablas de negocio; solo existen las tablas estándar de identidad de Better Auth.
 - PostgreSQL está configurado para Compose, pero no pudo verificarse healthy porque Docker Desktop no estaba ejecutando el daemon.
 - No se realizaron commits ni push.
 
 ## Decisiones aprobadas
 
-Producto web responsive mobile-first, con evolución a PWA; invitado sin registro; cuenta opcional con Google y email; monolito Next.js con TypeScript/App Router/Tailwind; PostgreSQL; almacenamiento local preparado para IndexedDB; autorización server-side; imágenes efímeras y datos estructurados; sin monetización, scraping, promociones ni IA compleja en MVP. En F1 no se incorporó ORM ni herramienta de migraciones, porque no están definidas y no hay tablas de negocio.
+Producto web responsive mobile-first, con evolución a PWA; invitado sin registro; cuenta opcional con Google y email; Better Auth sobre PostgreSQL; monolito Next.js con TypeScript/App Router/Tailwind; almacenamiento local preparado para IndexedDB; autorización server-side; imágenes efímeras y datos estructurados; sin monetización, scraping, promociones ni IA compleja en MVP. Better Auth usa sus migraciones oficiales; no se incorporó ORM adicional ni se crearon tablas de negocio.
 
 El producto inicial es un asistente personal de compra, no un comparador general de supermercados.
 
 ## Riesgos abiertos
 
-- Levantar/verificar Docker Desktop y PostgreSQL en el entorno local.
+- Las credenciales reales de Google y la verificación OAuth externa todavía no están configuradas.
 - Elegir proveedor/librería concreta de autenticación y estrategia de verificación de email.
 - Definir precisión monetaria final y reglas de redondeo por moneda.
 - Decidir proveedor de PostgreSQL y hosting.
@@ -41,7 +49,7 @@ El producto inicial es un asistente personal de compra, no un comparador general
 
 Antes de declarar F1 cerrada, iniciar Docker Desktop y repetir `docker compose up -d --build`, el healthcheck de PostgreSQL y una comprobación HTTP de la aplicación dentro de Compose.
 
-La fase siguiente será **F2 — Identidad y modo invitado**: agregar autenticación y sesión invitada sin mezclar datos, manteniendo el flujo manual y sin avanzar a funcionalidades posteriores.
+Puede abordarse **F2.2**, sin implementar todavía funcionalidades de compra.
 
 ## Instrucción de continuidad
 

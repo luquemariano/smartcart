@@ -19,10 +19,19 @@ Las fases son pequeñas y verificables. F0 es la fase actual; ninguna fase poste
 
 ## F2 — Identidad y modo invitado
 
+- **Estado:** en progreso; F2.1 completada.
 - **Objetivo:** permitir entrar como invitado o autenticarse.
-- **Entregables:** sesión protegida, Google OAuth, email/credenciales, sesión local invitada y flujo conceptual de migración preparado.
+- **Entregables:** sesión protegida, Google OAuth condicional, email/credenciales, sesión local invitada, migración conceptual documentada y tablas estándar de Better Auth.
 - **Dependencias:** F1.
 - **Cierre:** ambos caminos son utilizables y no se mezclan datos entre usuarios.
+
+### F2.1 — Infraestructura de identidad
+
+- **Estado:** completada.
+- **Objetivo:** integrar Better Auth, autenticación email/password, Google preparado e identidad invitada local.
+- **Entregables:** handler `/api/auth/[...all]`, cliente React, helper server-side, migración oficial, UI mínima de estados y tests de guest identity.
+- **Dependencias:** F1 y PostgreSQL.
+- **Cierre:** checks de código pasan; migración oficial creó y verificó las tablas estándar; signup/signin email funciona localmente. Google queda sujeto a credenciales externas y no fue probado mediante OAuth real.
 
 ## F3 — Supermercados
 

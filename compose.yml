@@ -6,9 +6,32 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-smartcart}:${POSTGRES_PASSWORD:-smartcart_local_only}@db:5432/${POSTGRES_DB:-smartcart}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-smartcart-compose-dev-secret-change-me-32chars}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - smartcart
+
+  migrate:
+    profiles: ['tools']
+    build:
+      context: .
+      target: builder
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-smartcart}:${POSTGRES_PASSWORD:-smartcart_local_only}@db:5432/${POSTGRES_DB:-smartcart}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-smartcart-compose-dev-secret-change-me-32chars}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ['npm', 'run', 'auth:migrate']
     networks:
       - smartcart
 

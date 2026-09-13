@@ -23,15 +23,21 @@ Una sesión invitada tiene un identificador local y no un `user_id` confiable. N
 
 La migración deberá ser idempotente: crear una única representación de la compra, conservar su origen y marcar el estado de sincronización. Los conflictos futuros deben resolverse con una política explícita, no con sobrescrituras silenciosas.
 
-## 5. Autenticación
+## 5. Identidad y autenticación
 
-Se requiere un proveedor compatible con Google OAuth y credenciales/email. La sesión debe usar cookies seguras, expiración y protección contra CSRF según el mecanismo elegido. El proveedor exacto y el esquema de verificación de email quedan para F1; las credenciales y secretos se configuran mediante variables de entorno y nunca se versionan.
+Better Auth es la infraestructura de identidad de la aplicación y usa PostgreSQL mediante su adaptador directo basado en `pg`/Kysely. Sus tablas estándar (`user`, `session`, `account`, `verification` y las que la versión requiera) son distintas de las futuras tablas de negocio. Se aplican mediante el comando oficial `auth migrate`; no se mantienen copias manuales.
+
+Google OAuth es el método principal de cuenta y solo se habilita cuando existen `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`. Email/password es la alternativa secundaria. La verificación de email queda deshabilitada temporalmente porque todavía no hay proveedor transaccional; debe endurecerse antes de producción. El callback local es `http://localhost:3000/api/auth/callback/google`.
+
+El invitado es deliberadamente local: no crea usuario, sesión Better Auth ni registro PostgreSQL. `localStorage` guarda únicamente un identificador aleatorio seguro sin PII. No se envía automáticamente al servidor. La identidad puede resetearse explícitamente.
+
+Los helpers server-side obtienen la sesión desde los headers de la request con `auth.api.getSession`. Ningún recurso futuro puede autorizarse con un `userId` recibido del navegador: el propietario debe derivarse de la sesión validada en servidor.
 
 ## 6. Offline y sincronización futura
 
 El diseño separa el estado editable de una compra del proceso de sincronización. En una evolución posterior, una cola local de operaciones con identificadores idempotentes podrá reintentar altas, cambios y eliminaciones cuando vuelva la conectividad. El servidor necesitará timestamps/versiones y reglas de conflicto.
 
-F0 solo fija el contrato conceptual: lectura/escritura local para continuidad, fuente de verdad remota para cuentas y reconciliación explícita. No se implementa aún el service worker ni la sincronización completa.
+F0 fijó el contrato conceptual; F2.1 añade solo identidad local y autenticación. No se implementa aún el service worker ni la sincronización completa.
 
 ## 7. Dinero, privacidad e imágenes
 

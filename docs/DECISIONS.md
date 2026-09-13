@@ -83,3 +83,38 @@
 - **Motivo:** impedir acceso cruzado mediante `user_id` manipulado.
 - **Consecuencias:** los handlers/actions no aceptan identidad como autoridad y deben probar aislamiento.
 - **Estado:** aprobada.
+
+## ADR-013 — Better Auth para identidad
+
+- **Decisión:** usar Better Auth con PostgreSQL directo mediante `pg` y sus migraciones oficiales.
+- **Motivo:** cubre sesiones, email/password y OAuth sin introducir Prisma/Drizzle ni duplicar tablas estándar.
+- **Consecuencias:** se mantienen las tablas de Better Auth separadas del dominio; el comando `auth migrate` debe ejecutarse antes de usar autenticación persistente.
+- **Estado:** aprobada.
+
+## ADR-014 — Google como método principal
+
+- **Decisión:** mostrar `Continuar con Google` como CTA principal cuando esté configurado.
+- **Motivo:** reduce fricción para crear una cuenta.
+- **Consecuencias:** las credenciales son variables de entorno y el callback local debe configurarse externamente; sin credenciales el resto de la app sigue arrancando.
+- **Estado:** aprobada.
+
+## ADR-015 — Email/password secundario sin verificación todavía
+
+- **Decisión:** habilitar email/password sin exigir verificación en F2.1.
+- **Motivo:** permite probar el flujo sin agregar un proveedor de correo transaccional.
+- **Consecuencias:** es una concesión temporal; se debe implementar verificación, recuperación y endurecimiento antes de producción.
+- **Estado:** aprobada temporalmente.
+
+## ADR-016 — Invitado local, no Anonymous de Better Auth
+
+- **Decisión:** no usar el plugin Anonymous; persistir solo un ID aleatorio local en el navegador.
+- **Motivo:** el invitado no debe crear usuario, sesión ni datos cloud antes de registrarse.
+- **Consecuencias:** la futura migración requerirá una rutina explícita, idempotente y server-side; no existe migración real en F2.1.
+- **Estado:** aprobada.
+
+## ADR-017 — Autorización derivada de sesión server-side
+
+- **Decisión:** obtener `user.id` desde `auth.api.getSession` en servidor.
+- **Motivo:** impedir que un `userId` enviado por el cliente permita acceso cruzado.
+- **Consecuencias:** toda futura consulta/mutación deberá filtrar por el usuario de la sesión validada.
+- **Estado:** aprobada.

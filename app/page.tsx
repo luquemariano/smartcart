@@ -1,3 +1,6 @@
+import { AccessPanel } from '@/components/access-panel';
+import { isGoogleConfigured } from '@/lib/auth';
+
 export default function Home() {
   return (
     <main className="flex min-h-screen items-center justify-center px-5 py-10">
@@ -11,6 +14,9 @@ export default function Home() {
         <p className="mt-4 text-base leading-7 text-slate-600">
           Bootstrap técnico activo.
         </p>
+        <div className="mt-8 border-t border-slate-200 pt-6">
+          <AccessPanel googleConfigured={isGoogleConfigured} />
+        </div>
       </section>
     </main>
   );

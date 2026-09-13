@@ -11,6 +11,12 @@
 
 ## 2. Entidades mínimas
 
+### Tablas de Better Auth
+
+Better Auth crea y mantiene sus tablas estándar mediante su migración oficial: `user`, `session`, `account` y `verification`, además de cualquier campo o tabla que requiera la versión instalada. Estas tablas pertenecen exclusivamente a identidad/sesiones y no son entidades de negocio de SmartCart. No se crean versiones paralelas manuales.
+
+El invitado local no tiene fila en estas tablas: su identificador vive en el navegador y no contiene PII. Las futuras entidades de negocio solo podrán asociarse a un usuario autenticado derivado server-side de `session`/`user`.
+
 ### User
 
 Cuenta autenticada. Obligatorios: `id`, proveedor/identidad externa o email normalizado, estado y timestamps. Nullable: nombre visible, email verificado y preferencias. No contiene datos de otra cuenta.
