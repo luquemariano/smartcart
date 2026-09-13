@@ -93,10 +93,11 @@ Las fases son pequeñas y verificables. F7 es la fase actual completada; ninguna
 
 ## F9 — Historial
 
-- **Objetivo:** conservar compras y observaciones de cuentas.
-- **Entregables:** listado, detalle, filtros básicos y creación de observaciones desde compras.
+- **Estado:** completada; PriceObservation queda fuera.
+- **Objetivo:** convertir compras completadas en historial útil y consistente.
+- **Entregables:** listado solo `completed`, detalle readonly basado en snapshots, totales/conteos, warning de precios pendientes, filtro por Store, orden newest/oldest, paginación limit/offset y equivalencia guest.
 - **Dependencias:** F6.
-- **Cierre:** invitado no obtiene historial cloud sin migración explícita.
+- **Cierre:** usuario A no puede ver historial ni Stores de B; sesiones activas quedan excluidas; no se persisten agregados derivados.
 
 ## F10 — Comparaciones históricas
 

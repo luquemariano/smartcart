@@ -68,3 +68,7 @@ Módulos de dominio dentro del monolito (auth, stores, products, shopping, histo
 ## F8 — Precios y resumen de compra
 
 `ShoppingItem.unitPrice` es nullable y se persiste como `NUMERIC(19,2)`. Las rutas autenticadas derivan subtotal, total, disponible y porcentaje mediante `lib/shopping-summary.ts`; la UI no persiste cálculos ni usa aritmética flotante para dinero. El repositorio guest reutiliza los mismos helpers. Un alta de catálogo con precio distinto al de la línea existente devuelve conflicto `409`; la edición explícita vía PATCH permite corregirlo. Las sesiones completadas exponen sus snapshots, cantidades y precios en modo lectura.
+
+## F9 — Historial derivado
+
+`GET /api/shopping-history` lista únicamente sesiones `completed` con `limit` (20 por defecto, máximo 50), `offset`, `sort=newest|oldest` y `storeId`. El servidor filtra siempre por el usuario autenticado, obtiene una página de sesiones y carga sus ítems en una segunda consulta acotada, evitando N+1. `GET /api/shopping-history/:id` devuelve el detalle readonly y usa los snapshots de `ShoppingItem`; una sesión activa o de otro propietario responde como no encontrada. Guest implementa la misma vista, filtro, orden, paginación y derivación desde localStorage sin backend.

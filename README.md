@@ -1,6 +1,6 @@
 # SmartCart
 
-SmartCart es un asistente personal de compras que busca ayudar a saber cuánto se lleva gastado antes de llegar a la caja. El proyecto se encuentra en **F8 — Precio, subtotales y resumen**.
+SmartCart es un asistente personal de compras que busca ayudar a saber cuánto se lleva gastado antes de llegar a la caja. El proyecto se encuentra en **F9 — Historial de compras**.
 
 ## Requisitos
 
@@ -44,7 +44,7 @@ npm run db:generate
 npm run db:migrate
 ```
 
-Los tests cubren identidad local, estados de acceso, formulario email, supermercados, productos guest, validación, barcode, conversiones exactas, dinero decimal, subtotales/resúmenes, sesiones guest con presupuesto, ítems guest y UI de listado/alta/búsqueda/selección/inicio/ítems/edición/finalización. El CRUD autenticado, búsqueda, sesiones, presupuesto, ítems, snapshots, precios, deduplicación segura, aislamiento entre usuarios y protección de Store/Product referenciados se verifican contra PostgreSQL en Docker. No se intenta probar OAuth real.
+Los tests cubren identidad local, estados de acceso, formulario email, supermercados, productos guest, validación, barcode, conversiones exactas, dinero decimal, subtotales/resúmenes, historial derivado, sesiones guest con presupuesto, ítems guest y UI de listado/alta/búsqueda/selección/inicio/ítems/edición/finalización/detalle readonly. El CRUD autenticado, búsqueda, sesiones, presupuesto, ítems, snapshots, precios, historial, deduplicación segura, aislamiento entre usuarios y protección de Store/Product referenciados se verifican contra PostgreSQL en Docker. No se intenta probar OAuth real.
 
 Para crear y aplicar migraciones del dominio: `npm run db:generate` y `npm run db:migrate`. En Docker, ejecutar `docker compose --profile tools run --rm domain-migrate`; PostgreSQL permanece en la red interna y no expone un puerto al host.
 

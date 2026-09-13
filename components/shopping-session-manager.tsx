@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   finishLocalShoppingSession,
   getActiveLocalShoppingSession,
-  listLocalShoppingSessions,
   startLocalShoppingSession,
   updateLocalShoppingSessionBudget,
   type LocalShoppingSession,
@@ -21,6 +20,7 @@ import {
 } from '@/lib/shopping-session-validation';
 import { listLocalStores, type LocalStore } from '@/lib/local-store-repository';
 import { ShoppingItemManager } from '@/components/shopping-item-manager';
+import { ShoppingHistoryManager } from '@/components/shopping-history-manager';
 
 type SessionView = LocalShoppingSession;
 type StoreView = Pick<LocalStore, 'id' | 'name' | 'branchName'>;
@@ -46,11 +46,11 @@ export function ShoppingSessionManager({
   guestId?: string | null;
 }) {
   const [stores, setStores] = useState<StoreView[]>([]);
-  const [sessions, setSessions] = useState<SessionView[]>([]);
   const [active, setActive] = useState<SessionView | null>(null);
   const [activeSummary, setActiveSummary] = useState<ShoppingSummary | null>(
     null,
   );
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [storeId, setStoreId] = useState('');
   const [budgetInput, setBudgetInput] = useState('');
   const [budgetEditOpen, setBudgetEditOpen] = useState(false);
@@ -62,12 +62,11 @@ export function ShoppingSessionManager({
   const load = useCallback(async () => {
     setLoading(true);
     setMessage('');
+    setHistoryRefreshKey((current) => current + 1);
     if (mode === 'guest' && guestId) {
       const localStores = listLocalStores(guestId);
-      const localSessions = listLocalShoppingSessions(guestId);
       const localActive = getActiveLocalShoppingSession(guestId);
       setStores(localStores);
-      setSessions(localSessions);
       setActive(localActive);
       setActiveSummary(
         localActive
@@ -84,31 +83,26 @@ export function ShoppingSessionManager({
     }
     if (mode === 'authenticated') {
       try {
-        const [storesResponse, sessionsResponse, activeResponse] =
-          await Promise.all([
-            fetch('/api/stores'),
-            fetch('/api/shopping-sessions'),
-            fetch('/api/shopping-sessions/active'),
-          ]);
+        const [storesResponse, activeResponse] = await Promise.all([
+          fetch('/api/stores'),
+          fetch('/api/shopping-sessions/active'),
+        ]);
         const storesData = await storesResponse.json();
-        const sessionsData = await sessionsResponse.json();
         const activeData = await activeResponse.json();
         const nextActive = activeResponse.ok
           ? (activeData?.session ?? null)
           : null;
         setStores(storesResponse.ok ? (storesData?.stores ?? []) : []);
-        setSessions(sessionsResponse.ok ? (sessionsData?.sessions ?? []) : []);
         setActive(nextActive);
         setActiveSummary(
           activeResponse.ok ? (activeData?.summary ?? null) : null,
         );
         setBudgetEditValue(nextActive?.budgetAmount ?? '');
-        if (!storesResponse.ok || !sessionsResponse.ok || !activeResponse.ok) {
+        if (!storesResponse.ok || !activeResponse.ok) {
           setMessage('No pudimos cargar tus compras.');
         }
       } catch {
         setStores([]);
-        setSessions([]);
         setActive(null);
         setActiveSummary(null);
         setMessage('No pudimos cargar tus compras.');
@@ -497,35 +491,13 @@ export function ShoppingSessionManager({
           </button>
         </div>
       )}
-      {sessions.some((session) => session.status === 'completed') && (
-        <div className="mt-6">
-          <h3 className="font-semibold text-slate-900">Compras anteriores</h3>
-          <ul className="mt-3 space-y-2 text-sm text-slate-600">
-            {sessions
-              .filter((session) => session.status === 'completed')
-              .map((session) => (
-                <li
-                  key={session.id}
-                  className="rounded-lg border border-slate-200 px-3 py-2"
-                >
-                  {storeLabel(
-                    stores.find((store) => store.id === session.storeId),
-                  )}{' '}
-                  · {formatDate(session.startedAt)} ·{' '}
-                  {session.budgetAmount
-                    ? `Presupuesto: ${formatMoney(session.budgetAmount, session.currency)}`
-                    : 'Sin presupuesto'}
-                  <ShoppingItemManager
-                    guestId={guestId}
-                    mode={mode}
-                    sessionId={session.id}
-                    status={session.status}
-                  />
-                </li>
-              ))}
-          </ul>
-        </div>
-      )}
+      <ShoppingHistoryManager
+        key={historyRefreshKey}
+        guestId={guestId}
+        mode={mode}
+        refreshKey={historyRefreshKey}
+        stores={stores}
+      />
       {message && (
         <p className="mt-3 text-sm text-rose-700" role="alert">
           {message}

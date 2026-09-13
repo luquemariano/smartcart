@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-**F8 — Precio, subtotales y resumen (completada).**
+**F9 — Historial de compras (completada).**
 
 ## Qué existe hoy
 
@@ -50,10 +50,12 @@
 - Edición inline de cantidad/precio, subtotales por ítem y resumen autenticado server-side con gasto, presupuesto, disponible y porcentaje.
 - FKs `shopping_session_id` y `product_id` con `ON DELETE RESTRICT`; Product usado no puede eliminarse.
 - Repositorio guest de ítems persistente, aislado por guest ID y sesión, con el mismo ciclo activo/histórico y helpers monetarios compartidos.
+- Historial derivado de compras `completed`, con filtro por Store, orden, paginación, detalle readonly, conteos y advertencia de precios pendientes.
+- API autenticada `/api/shopping-history` y `/api/shopping-history/:id`, con aislamiento por propietario y carga de ítems acotada por página.
 
 ## Qué no existe
 
-- No existen captura asistida/OCR/cámara, cantidades compradas por peso con reglas específicas, historial de precios, sincronización ni migración guest→cuenta.
+- No existen PriceObservation, evolución histórica de precios, comparación, captura asistida/OCR/cámara, cantidades compradas por peso con reglas específicas, sincronización ni migración guest→cuenta.
 - Google OAuth no fue probado con credenciales reales ni configuración externa de Google Cloud.
 - La baja de supermercados es hard delete por ahora; deberá revisarse cuando exista historial.
 - La baja de productos es hard delete por ahora; deberá revisarse cuando exista historial o referencias.
@@ -64,7 +66,7 @@
 
 Producto web responsive mobile-first, con evolución a PWA; invitado sin registro; cuenta opcional con Google y email; Better Auth sobre PostgreSQL; monolito Next.js con TypeScript/App Router/Tailwind; almacenamiento local preparado para IndexedDB; autorización server-side; imágenes efímeras y datos estructurados; sin monetización, scraping, promociones ni IA compleja en MVP. Better Auth usa sus migraciones oficiales; no se incorporó ORM adicional ni se crearon tablas de negocio. F2.2 conserva el guest ID tras autenticación para una futura importación explícita.
 
-El producto inicial es un asistente personal de compra, no un comparador general de supermercados. F3–F7 mantienen el alcance limitado a contexto de compra, catálogo personal, sesión, presupuesto e ítems, sin precios ni cálculos.
+El producto inicial es un asistente personal de compra, no un comparador general de supermercados. F3–F9 mantienen el alcance limitado a contexto de compra, catálogo personal, sesión, presupuesto, ítems, precios derivados e historial propio.
 
 ## Riesgos abiertos
 
@@ -78,7 +80,7 @@ El producto inicial es un asistente personal de compra, no un comparador general
 
 ## Siguiente fase
 
-La siguiente fase puede abordar **F9 — Historial**, manteniendo fuera OCR, cámara, lector de barcode, comparación y sincronización.
+La siguiente fase puede abordar **F10 — Comparaciones históricas**, manteniendo fuera PriceObservation, OCR, cámara, lector de barcode y sincronización.
 
 ## Instrucción de continuidad
 

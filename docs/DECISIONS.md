@@ -259,6 +259,20 @@
 - **Consecuencias:** no se persisten subtotales/totales; la API transporta importes como strings y los helpers usan enteros escalados, con redondeo half-up a centavos para subtotales no exactos.
 - **Estado:** aprobada para F8.
 
+## ADR-040 — Historial paginado y readonly
+
+- **Decisión:** el historial representa solo `ShoppingSession` `completed`, ordenadas por `finishedAt DESC` por defecto, con `limit/offset` y filtro por Store. El detalle usa los snapshots de `ShoppingItem` y no muestra acciones de edición o eliminación.
+- **Motivo:** conservar una lectura fiel del pasado y evitar traer historial ilimitado o depender del Product actual.
+- **Consecuencias:** una sesión activa no aparece; las consultas autenticadas filtran siempre por `owner_user_id`; guest replica la semántica localmente.
+- **Estado:** aprobada para F9.
+
+## ADR-041 — Precios pendientes explícitos en historial
+
+- **Decisión:** si una compra completada contiene ítems sin precio, se muestra `Total registrado`, la cantidad de ítems pendientes y una advertencia. `null` nunca se interpreta como cero.
+- **Motivo:** permitir cierre operativo sin presentar un total parcial como definitivo.
+- **Consecuencias:** no se puede completar precio ni modificar snapshot desde el historial; cualquier evolución de precios queda para PriceObservation.
+- **Estado:** aprobada para F9.
+
 ## ADR-038 — Conflicto explícito de precio al fusionar catálogo
 
 - **Decisión:** una referencia de catálogo repetida fusiona cantidad solo cuando el precio coincide (incluyendo ambos `null`). Si difiere, la alta devuelve conflicto y la persona debe editar el ítem existente explícitamente.
