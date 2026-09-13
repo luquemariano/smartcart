@@ -121,25 +121,32 @@ Las fases son pequeñas y verificables. F10 es la fase actual completada; ningun
 - **Dependencias:** F2, F5, F6, F9.
 - **Cierre:** una compra puede continuar offline y sincronizar sin duplicación silenciosa.
 
-## F13 — Dashboard
+## F13 — Barcode durante compra activa
+
+- **Objetivo:** agilizar el agregado de productos mientras se realiza una compra.
+- **Entregables:** cámara trasera con `BarcodeDetector`, fallback manual, lookup exacto, alta rápida de Product desconocido y reutilización de las reglas de ShoppingItem para cuenta y guest.
+- **Dependencias:** F5, F6, F8 y F12.
+- **Cierre:** barcode preservado como string, snapshots correctos, precio explícito, sin persistencia de imágenes y sin auto-inicio de sesión.
+
+## F14 — Dashboard
 
 - **Objetivo:** presentar valor acumulativo.
 - **Entregables:** resumen de compras, tendencias simples y accesos a listas/comparaciones.
-- **Dependencias:** F9–F11.
+- **Dependencias:** F9–F13.
 - **Cierre:** dashboard útil, rápido y sin convertir el producto en un comparador general.
 
-## F14 — QA, mobile y PWA
+## F15 — QA, mobile y PWA
 
 - **Objetivo:** preparar una experiencia confiable en teléfonos.
 - **Entregables:** pruebas de flujos críticos, accesibilidad básica, responsive QA, manifest, instalación y rendimiento.
 - **Dependencias:** F6, F12, F13.
 - **Cierre:** criterios de aceptación móviles y PWA documentados y verificados.
 
-## F15 — Producción
+## F16 — Producción
 
 - **Objetivo:** desplegar MVP con operación segura.
 - **Entregables:** Docker/hosting, migraciones, backups, observabilidad, políticas de secretos y runbook.
-- **Dependencias:** F14.
+- **Dependencias:** F15.
 - **Cierre:** despliegue repetible, rollback conocido y controles de seguridad revisados.
 
 ### F11 — Listas reutilizables (implementada)

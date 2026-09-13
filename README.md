@@ -19,6 +19,8 @@ Copiar `.env.example` a `.env.local` si se va a usar PostgreSQL local y generar 
 
 La pantalla permite continuar con Google cuando ambas credenciales existen, entrar/registrarse con email o usar un invitado local. Luego permite administrar supermercados, productos, listas reutilizables y sesiones de compra: las cuentas usan PostgreSQL mediante `/api/stores`, `/api/products`, `/api/shopping-lists` y `/api/shopping-sessions`; los invitados usan `localStorage` versionado aislado por guest ID. Las listas son plantillas y al importarse crean ítems independientes sin precios. Sin `BETTER_AUTH_SECRET`, el desarrollo usa un valor explícitamente no productivo; producción falla al iniciar para evitar una configuración insegura.
 
+Durante una compra activa se puede agregar un producto por código de barras. Se prefiere `BarcodeDetector` nativo y la cámara trasera (`facingMode: environment`); si no están disponibles, se ingresa el código manualmente. El código se conserva como string de 8 a 14 dígitos, incluyendo ceros iniciales. No se suben ni persisten imágenes. Un producto desconocido requiere nombre y precio explícitos antes de crearse y agregarse a la compra.
+
 ## Ejecución con Docker
 
 ```bash

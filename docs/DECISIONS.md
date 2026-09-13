@@ -301,6 +301,13 @@
 - **Consecuencias:** Stores y Products compatibles se reutilizan; compras y listas se conservan como eventos/entidades independientes. Si la cuenta tiene una sesión activa mientras el guest también tiene una activa, se aborta la importación completa y se conserva el guest local para reintentar después.
 - **Estado:** aprobada para F12.
 
+## ADR-045 — Barcode efímero durante compra activa
+
+- **Decisión:** preferir `BarcodeDetector` nativo con cámara trasera y ofrecer ingreso manual cuando la capacidad no existe o el permiso falla. El código se valida como string de 8–14 dígitos y nunca se guarda una imagen.
+- **Motivo:** acelerar el alta sin agregar dependencia externa, uploads ni una migración de datos.
+- **Consecuencias:** el resultado siempre requiere confirmación explícita de cantidad y precio; un producto desconocido se crea antes del ShoppingItem. Sin sesión activa no se inicia ninguna compra automáticamente.
+- **Estado:** aprobada para F13.
+
 ## ADR-043 — Compatibilidad estricta de precio por producto
 
 - **Decisión:** comparar precios de un mismo `product_id` solo si coinciden exactamente la presentación y la moneda; cantidades faltantes, precios faltantes y bases cero no generan porcentajes inventados.

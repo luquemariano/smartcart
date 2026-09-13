@@ -21,6 +21,7 @@ import {
 import { listLocalStores, type LocalStore } from '@/lib/local-store-repository';
 import { ShoppingItemManager } from '@/components/shopping-item-manager';
 import { ShoppingHistoryManager } from '@/components/shopping-history-manager';
+import { BarcodeProductAdder } from '@/components/barcode-product-adder';
 
 type SessionView = LocalShoppingSession;
 type StoreView = Pick<LocalStore, 'id' | 'name' | 'branchName'>;
@@ -446,6 +447,11 @@ export function ShoppingSessionManager({
             sessionId={active.id}
             status={active.status}
             onSummaryChange={setActiveSummary}
+          />
+          <BarcodeProductAdder
+            guestId={guestId}
+            mode={mode}
+            sessionId={active.id}
           />
         </div>
       ) : (
