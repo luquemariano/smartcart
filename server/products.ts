@@ -5,6 +5,7 @@ import {
   products,
   shoppingItems,
   shoppingListItems,
+  promotions,
 } from '@/db/schema';
 import {
   normalizeBarcode,
@@ -167,6 +168,12 @@ export async function deleteProduct(userId: string, productId: string) {
     .where(eq(priceObservations.productId, productId))
     .limit(1);
   if (priceReference) throw new ProductReferencedError();
+  const [promotionReference] = await db
+    .select({ id: promotions.id })
+    .from(promotions)
+    .where(eq(promotions.productId, productId))
+    .limit(1);
+  if (promotionReference) throw new ProductReferencedError();
 
   try {
     const [product] = await db

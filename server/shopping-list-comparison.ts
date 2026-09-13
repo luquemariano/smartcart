@@ -1,9 +1,11 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '@/db';
 import { stores } from '@/db/schema';
+import { listCurrentPromotions } from '@/server/promotions';
 import { getLatestPricesForProducts } from '@/server/price-observations';
 import { getShoppingListDetail } from '@/server/shopping-lists';
 import { compareShoppingList } from '@/lib/shopping-list-comparison';
+import type { PromotionCandidate } from '@/lib/promotion-calculator';
 
 export class ShoppingListComparisonNotFoundError extends Error {}
 
@@ -18,6 +20,13 @@ export async function compareShoppingListForUser(
     item.productId ? [item.productId] : [],
   );
   const prices = await getLatestPricesForProducts(productIds, userId);
+  const promotions = await listCurrentPromotions(
+    userId,
+    prices.map((price) => ({
+      productId: price.productId,
+      storeId: price.storeId,
+    })),
+  );
   const storeIds = [...new Set(prices.map((price) => price.storeId))];
   const ownerStores = storeIds.length
     ? await db
@@ -41,6 +50,7 @@ export async function compareShoppingListForUser(
       })),
       ownerStores,
       prices,
+      promotions as unknown as PromotionCandidate[],
     ),
   };
 }

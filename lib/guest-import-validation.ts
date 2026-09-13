@@ -84,6 +84,23 @@ const list = z
     items: z.array(listItem),
   })
   .strict();
+const promotion = z
+  .object({
+    id: z.string().min(1),
+    guestId: z.string().uuid(),
+    productId: z.string().min(1),
+    storeId: z.string().min(1),
+    type: z.enum(['percentage', 'fixed_price', 'buy_n_pay_m']),
+    value: z.string().nullable(),
+    buyQuantity: z.number().int().nullable(),
+    payQuantity: z.number().int().nullable(),
+    startsAt: dateString,
+    endsAt: dateString,
+    isActive: z.boolean(),
+    createdAt: dateString,
+    updatedAt: dateString,
+  })
+  .strict();
 
 export const guestImportSnapshotSchema = z
   .object({
@@ -93,6 +110,7 @@ export const guestImportSnapshotSchema = z
     products: z.array(product),
     sessions: z.array(session),
     lists: z.array(list),
+    promotions: z.array(promotion).default([]),
   })
   .strict()
   .superRefine((value, context) => {

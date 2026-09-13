@@ -7,6 +7,7 @@ import { createLocalShoppingList } from '@/lib/local-shopping-list-repository';
 import { getGuestIdentity } from '@/lib/guest-identity';
 import { buildGuestImportSnapshot, importGuestData } from '@/lib/guest-import';
 import { guestImportSnapshotSchema } from '@/lib/guest-import-validation';
+import { createLocalPromotion } from '@/lib/local-promotion-repository';
 
 describe('guest import coordinator', () => {
   beforeEach(() => {
@@ -24,10 +25,22 @@ describe('guest import coordinator', () => {
       quantityUnit: null,
     });
     createLocalShoppingList(guestId, 'Compra');
+    createLocalPromotion(guestId, {
+      productId: 'product-guest',
+      storeId: 'store-guest',
+      type: 'percentage',
+      value: '10.00',
+      buyQuantity: null,
+      payQuantity: null,
+      startsAt: '2026-01-01T00:00:00.000Z',
+      endsAt: '2026-12-31T00:00:00.000Z',
+      isActive: true,
+    });
     const snapshot = buildGuestImportSnapshot(guestId);
     expect(snapshot.guestId).toBe(guestId);
     expect(snapshot.products).toHaveLength(1);
     expect(snapshot.lists).toHaveLength(1);
+    expect(snapshot.promotions).toHaveLength(1);
     expect(() =>
       guestImportSnapshotSchema.parse({ ...snapshot, ownerUserId: 'evil' }),
     ).toThrow();

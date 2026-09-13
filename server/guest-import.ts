@@ -9,6 +9,7 @@ import {
   shoppingLists,
   shoppingSessions,
   stores,
+  promotions,
 } from '@/db/schema';
 import {
   normalizeBarcode,
@@ -32,6 +33,7 @@ export type GuestImportResult = {
   sessions: { imported: number; skipped: number; conflicted: number };
   itemsImported: number;
   listsImported: number;
+  promotionsImported: number;
   activeSessionConflict: false;
   warnings: string[];
 };
@@ -105,6 +107,7 @@ export async function importGuestSnapshot(
       let productsReused = 0;
       let itemsImported = 0;
       let listsImported = 0;
+      let promotionsImported = 0;
       for (const source of snapshot.stores) {
         const parsed = storeInputSchema.parse({
           name: source.name,
@@ -223,6 +226,30 @@ export async function importGuestSnapshot(
         });
         sessionMap.set(source.id, id);
       }
+      for (const source of snapshot.promotions) {
+        const storeId = storeMap.get(source.storeId);
+        const productId = productMap.get(source.productId);
+        if (!storeId || !productId)
+          throw new GuestImportDataError(
+            'La referencia de promoción no existe.',
+          );
+        await tx.insert(promotions).values({
+          id: crypto.randomUUID(),
+          ownerUserId: userId,
+          storeId,
+          productId,
+          type: source.type,
+          value: source.value,
+          buyQuantity: source.buyQuantity?.toString() ?? null,
+          payQuantity: source.payQuantity?.toString() ?? null,
+          startsAt: date(source.startsAt),
+          endsAt: date(source.endsAt),
+          isActive: source.isActive,
+          createdAt: date(source.createdAt),
+          updatedAt: date(source.updatedAt),
+        });
+        promotionsImported++;
+      }
       for (const source of snapshot.sessions)
         for (const item of source.items) {
           const sessionId = sessionMap.get(item.shoppingSessionId);
@@ -333,6 +360,7 @@ export async function importGuestSnapshot(
         },
         itemsImported,
         listsImported,
+        promotionsImported,
         activeSessionConflict: false,
         warnings: [],
       };

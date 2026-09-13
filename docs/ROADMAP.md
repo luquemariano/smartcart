@@ -1,6 +1,6 @@
 # SmartCart — Roadmap
 
-Las fases son pequeñas y verificables. F15 es la última fase completada; F16 es la siguiente fase y todavía no fue iniciada.
+Las fases son pequeñas y verificables. F16 es la última fase completada; F17 es la siguiente fase y todavía no fue iniciada.
 
 ## F0 — Foundation
 
@@ -145,10 +145,15 @@ Las fases son pequeñas y verificables. F15 es la última fase completada; F16 e
 
 ## F16 — Promociones / costo real opcional
 
+- **Estado:** completada y cerrada.
 - **Objetivo:** dejar espacio para promociones, tarjetas, distancia, combustible/taxi u otros costos, sin implementarlos todavía.
 - **Entregables:** definición futura de fuentes y reglas opcionales de costo real.
 - **Dependencias:** F15.
 - **Cierre:** alcance explícito y separado del precio histórico normalizado.
+
+### F16 — Promociones / costo real opcional (completada)
+
+Promociones por Product + Store con vigencia, CRUD autenticado, repositorio guest, importación F12 y cálculo exacto sobre el latest PriceObservation. Se aplican sin stacking y N x M solo con cantidades enteras; costos de viaje y promociones bancarias quedan fuera.
 
 ## F17 — Offline/PWA robusta
 

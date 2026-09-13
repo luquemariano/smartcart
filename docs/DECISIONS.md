@@ -328,3 +328,10 @@
 - **Ganador:** solo se informa cuando existen al menos dos Stores completos al 100% y no hay empate; los Stores parciales nunca ganan.
 - **Consecuencias:** API autenticada y guest comparten el calculador; la API aplica ownership server-side y obtiene precios en batch. F16 queda reservada para promociones y costo real opcional.
 - **Estado:** aprobada y cerrada para F15.
+
+## ADR-048 — Promociones como capa sobre el precio observado
+
+- **Decisión:** F16 conserva `PriceObservation` como precio base y aplica como máximo una promoción vigente por Product + Store. Se elige la promoción individual con menor subtotal efectivo; no se combinan promociones.
+- **Reglas:** percentage, fixed_price y buy_n_pay_m usan dinero exacto; N x M solo aplica a cantidades enteras. Promociones futuras, expiradas o inactivas permanecen almacenadas pero no aplican.
+- **Fuera de alcance:** promociones bancarias, reintegros, costos de viaje, scraping y offline.
+- **Estado:** aprobada y cerrada para F16.

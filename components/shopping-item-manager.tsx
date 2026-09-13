@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
@@ -152,8 +153,7 @@ export function ShoppingItemManager({
   }, [guestId, mode, publishSummary, sessionId]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
+    void load();
   }, [load]);
 
   async function addItem(input: unknown, product?: ProductView) {

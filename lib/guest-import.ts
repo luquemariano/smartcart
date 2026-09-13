@@ -11,6 +11,10 @@ import { clearGuestShoppingItemsAfterImport } from '@/lib/local-shopping-item-re
 import { clearGuestShoppingListsAfterImport } from '@/lib/local-shopping-list-repository';
 import { clearGuestIdentityAfterImport } from '@/lib/guest-identity';
 import { clearGuestPriceObservationsAfterImport } from '@/lib/local-price-observation-repository';
+import {
+  clearGuestPromotionsAfterImport,
+  getPendingGuestPromotions,
+} from '@/lib/local-promotion-repository';
 
 export function buildGuestImportSnapshot(guestId: string) {
   const allItems = getPendingGuestShoppingItems(guestId);
@@ -25,6 +29,7 @@ export function buildGuestImportSnapshot(guestId: string) {
       items: allItems.filter((item) => item.shoppingSessionId === session.id),
     })),
     lists: getPendingGuestShoppingLists(guestId),
+    promotions: getPendingGuestPromotions(guestId),
   };
 }
 export function getPendingGuestImportSnapshot() {
@@ -38,7 +43,8 @@ export function hasPendingGuestImportData() {
     (snapshot.stores.length ||
       snapshot.products.length ||
       snapshot.sessions.length ||
-      snapshot.lists.length),
+      snapshot.lists.length ||
+      snapshot.promotions.length),
   );
 }
 export async function importGuestData() {
@@ -62,6 +68,7 @@ export async function importGuestData() {
     clearGuestShoppingItemsAfterImport(snapshot.guestId);
     clearGuestShoppingListsAfterImport(snapshot.guestId);
     clearGuestPriceObservationsAfterImport(snapshot.guestId);
+    clearGuestPromotionsAfterImport(snapshot.guestId);
     clearGuestIdentityAfterImport();
   }
   return { ...result, responseOk: response.ok, snapshot };

@@ -73,6 +73,10 @@ Lista reutilizable. Obligatorios: `id`, `owner_user_id`, nombre y timestamps. Nu
 
 Producto esperado en una lista. Obligatorios: `id`, `shopping_list_id`, nombre o `product_id`, cantidad esperada y unidad. Nullable: notas, cantidad objetivo, orden y estado de completado. Al transformar una lista en compra se copian datos necesarios a la sesión, sin mutar silenciosamente el histórico.
 
+## Promotion (F16)
+
+`promotions` guarda una promoción explícita por Product + Store y propietario, con tipo `percentage`, `fixed_price` o `buy_n_pay_m`, vigencia `starts_at`/`ends_at`, activación manual y parámetros específicos. Product y Store usan FK `RESTRICT`. La promoción no modifica ni crea `PriceObservation`: se calcula en runtime sobre el último precio ARS observado. Solo se aplica una promoción individual, la que produce menor subtotal; N x M requiere cantidad entera.
+
 ## 3. Relaciones
 
 `User 1—N Store`, `User 1—N Product`, `User 1—N ShoppingSession`, `Store 1—N ShoppingSession`, `ShoppingSession 1—N ShoppingItem`, `Product 1—N ShoppingItem`, `User 1—N PriceObservation`, `Store 1—N PriceObservation`, `Product 1—N PriceObservation`, `User 1—N ShoppingList` y `ShoppingList 1—N ShoppingListItem`. `ShoppingItem` apunta a `Product` opcionalmente, pero conserva snapshot suficiente cuando el producto sea manual o cambie. F9 muestra el Store referenciado actualmente; un snapshot de nombre del Store queda como evolución futura si se permiten renombrados o baja lógica.

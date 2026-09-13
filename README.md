@@ -23,7 +23,9 @@ Durante una compra activa se puede agregar un producto por código de barras. Se
 
 Al finalizar una compra con Store, los ítems de catálogo que tienen precio generan `PriceObservation`, el historial normalizado Product + Store + fecha. Los ítems manuales, compras sin Store y precios faltantes se omiten. El backfill histórico es explícito y reejecutable con `npm run db:backfill-price-observations` después de aplicar la migración de dominio.
 
-F14 — PriceObservation está completada y validada contra PostgreSQL real. F15 — Comparación de listas entre supermercados también está completada: usa únicamente PriceObservation conocidas, latest por Product+Store, dinero exacto, cobertura explícita, ownership y el mismo calculador para guest. La siguiente fase es F16 — Promociones / costo real opcional; todavía no fue iniciada.
+F14 — PriceObservation está completada y validada contra PostgreSQL real. F15 — Comparación de listas entre supermercados también está completada: usa únicamente PriceObservation conocidas, latest por Product+Store, dinero exacto, cobertura explícita, ownership y el mismo calculador para guest. F16 — Promociones / costo real opcional está completada y cerrada.
+
+F16 — Promociones / costo real opcional está completada y validada. Agrega promociones por Product + Store con vigencia, sin alterar PriceObservation; aplica como máximo la mejor promoción individual sobre el último precio conocido, sin stacking, promociones bancarias ni costos de viaje. F17 Offline/PWA continúa pendiente.
 
 ## Ejecución con Docker
 

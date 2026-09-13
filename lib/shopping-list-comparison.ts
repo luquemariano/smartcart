@@ -1,4 +1,13 @@
-import { compareMoney, multiplyMoneyByQuantity, sumMoney } from '@/lib/money';
+import {
+  compareMoney,
+  multiplyMoneyByQuantity,
+  sumMoney,
+  subtractMoney,
+} from '@/lib/money';
+import {
+  chooseBestPromotion,
+  type PromotionCandidate,
+} from '@/lib/promotion-calculator';
 
 export type ComparisonListItem = {
   productId: string | null;
@@ -24,6 +33,8 @@ export function compareShoppingList(
   listItems: ComparisonListItem[],
   stores: ComparisonStore[],
   latestPrices: ComparisonPrice[],
+  promotions: PromotionCandidate[] = [],
+  comparisonDate = new Date(),
 ) {
   const comparable = listItems.filter((item) => item.productId !== null);
   if (comparable.length === 0)
@@ -63,16 +74,40 @@ export function compareShoppingList(
         return { ...item, status: 'manual_uncomparable' as const };
       const price = prices.get(item.productId);
       if (!price) return { ...item, status: 'missing_price' as const };
+      const applicablePromotions = promotions.filter(
+        (promotion) =>
+          promotion.productId === item.productId &&
+          promotion.storeId === store.id,
+      );
+      const selected = chooseBestPromotion(
+        price.unitPrice,
+        item.quantity,
+        applicablePromotions,
+        comparisonDate,
+      );
+      const baseSubtotal = multiplyMoneyByQuantity(
+        price.unitPrice,
+        item.quantity,
+      );
       return {
         ...item,
         status: 'priced' as const,
         unitPrice: price.unitPrice,
-        subtotal: multiplyMoneyByQuantity(price.unitPrice, item.quantity),
+        baseUnitPrice: price.unitPrice,
+        subtotal: baseSubtotal,
+        baseSubtotal,
+        effectiveSubtotal: selected.result.effectiveSubtotal,
+        promotion: selected.p,
+        savings: selected.result.savings,
         observedAt: price.observedAt,
       };
     });
     const pricedItems = items.filter((item) => item.status === 'priced');
     const knownTotal = sumMoney(pricedItems.map((item) => item.subtotal));
+    const effectiveTotal = sumMoney(
+      pricedItems.map((item) => item.effectiveSubtotal),
+    );
+    const promotionSavings = subtractMoney(knownTotal, effectiveTotal);
     const comparableCount = comparable.length;
     const coveragePercent = (
       (pricedItems.length * 100) /
@@ -81,6 +116,8 @@ export function compareShoppingList(
     return {
       store,
       totalKnown: knownTotal,
+      effectiveTotal,
+      promotionSavings,
       currency: 'ARS' as const,
       totalItems: listItems.length,
       pricedItems: pricedItems.length,
@@ -120,13 +157,15 @@ export function compareShoppingList(
   let savingsVsNextBest: string | null = null;
   if (complete.length >= 2) {
     const ordered = [...complete].sort((left, right) =>
-      compareMoney(left.totalKnown, right.totalKnown),
+      compareMoney(left.effectiveTotal, right.effectiveTotal),
     );
-    if (compareMoney(ordered[0].totalKnown, ordered[1].totalKnown) !== 0) {
+    if (
+      compareMoney(ordered[0].effectiveTotal, ordered[1].effectiveTotal) !== 0
+    ) {
       bestStore = ordered[0].store;
       savingsVsNextBest = subtractExact(
-        ordered[1].totalKnown,
-        ordered[0].totalKnown,
+        ordered[1].effectiveTotal,
+        ordered[0].effectiveTotal,
       );
     }
   }

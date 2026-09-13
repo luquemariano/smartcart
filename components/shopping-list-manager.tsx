@@ -15,6 +15,7 @@ import {
 import { listLocalProducts } from '@/lib/local-product-repository';
 import { listLocalStores } from '@/lib/local-store-repository';
 import { listLocalPriceObservations } from '@/lib/local-price-observation-repository';
+import { listLocalPromotions } from '@/lib/local-promotion-repository';
 import { compareShoppingList } from '@/lib/shopping-list-comparison';
 type Product = {
   id: string;
@@ -143,6 +144,7 @@ export function ShoppingListManager({
               branchName: store.branchName ?? null,
             })),
             prices,
+            listLocalPromotions(guestId),
           ),
         });
       } else {
@@ -415,7 +417,13 @@ export function ShoppingListManager({
                       : ''}
                   </p>
                   <p className="text-sm text-slate-700">
-                    ${store.totalKnown} · {store.pricedItems}/
+                    Base ${store.totalKnown} · Total efectivo $
+                    {store.effectiveTotal ?? store.totalKnown}
+                    {store.promotionSavings && store.promotionSavings !== '0.00'
+                      ? ` · promos -$${store.promotionSavings}`
+                      : ''}
+                    {' · '}
+                    {store.pricedItems}/
                     {comparison.list.items?.filter(
                       (item: any) => item.productId,
                     ).length ?? store.totalItems}{' '}

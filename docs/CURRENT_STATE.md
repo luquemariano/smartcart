@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-**F15 — Comparación de listas entre supermercados (completada y cerrada).** HEAD: `1f4bcaf`. F14 permanece completada y cerrada; F16 todavía no fue iniciada.
+**F16 — Promociones / costo real opcional (completada y cerrada).** HEAD: `a200c15`. F14 y F15 permanecen completadas y cerradas; F17 todavía no fue iniciada.
 
 ## Qué existe hoy
 
@@ -86,7 +86,7 @@ El producto inicial es un asistente personal de compra, no un comparador general
 
 ## Siguiente fase
 
-La siguiente fase es **F16 — Promociones / costo real opcional**. F16 todavía no fue iniciada.
+La siguiente fase es **F17 — Offline/PWA robusta**. F17 todavía no fue iniciada.
 
 ## Instrucción de continuidad
 
