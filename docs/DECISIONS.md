@@ -286,3 +286,17 @@
 - **Motivo:** separar decisiones financieras exactas de la presentación visual y comunicar sobrepresupuesto sin truncarlo.
 - **Consecuencias:** guest usa el mismo helper compartido localmente; una sesión sin presupuesto muestra solo gasto.
 - **Estado:** aprobada para F8.
+
+## ADR-042 — Comparación histórica derivada y acotada
+
+- **Decisión:** enriquecer el detalle de una compra finalizada con la compra anterior más reciente, priorizando el mismo Store, y agregar un overview por Store separado.
+- **Motivo:** responder comparaciones simples sin incorporar un modelo de observaciones, scraping ni una consulta por producto.
+- **Consecuencias:** el detalle usa consultas acotadas/batch; el overview puede recorrer el historial propio una vez para agregarlo; no se afirma cobertura fuera de las compras registradas.
+- **Estado:** aprobada para F10.
+
+## ADR-043 — Compatibilidad estricta de precio por producto
+
+- **Decisión:** comparar precios de un mismo `product_id` solo si coinciden exactamente la presentación y la moneda; cantidades faltantes, precios faltantes y bases cero no generan porcentajes inventados.
+- **Motivo:** evitar comparar envases o unidades incompatibles y conservar la semántica `null != 0`.
+- **Consecuencias:** observaciones sin pareja compatible se muestran como datos insuficientes o comparación parcial; no se crea `PriceObservation` ni se normalizan unidades en F10.
+- **Estado:** aprobada para F10.

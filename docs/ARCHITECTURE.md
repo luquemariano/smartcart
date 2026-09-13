@@ -72,3 +72,9 @@ Módulos de dominio dentro del monolito (auth, stores, products, shopping, histo
 ## F9 — Historial derivado
 
 `GET /api/shopping-history` lista únicamente sesiones `completed` con `limit` (20 por defecto, máximo 50), `offset`, `sort=newest|oldest` y `storeId`. El servidor filtra siempre por el usuario autenticado, obtiene una página de sesiones y carga sus ítems en una segunda consulta acotada, evitando N+1. `GET /api/shopping-history/:id` devuelve el detalle readonly y usa los snapshots de `ShoppingItem`; una sesión activa o de otro propietario responde como no encontrada. Guest implementa la misma vista, filtro, orden, paginación y derivación desde localStorage sin backend.
+
+## F10 — Comparaciones históricas derivadas
+
+El detalle de `GET /api/shopping-history/:id` incluye la comparación contra la compra `completed` anterior más reciente, priorizando el mismo Store y usando una consulta de sesiones más una consulta batch de ítems. Si no hay una compra previa, la UI muestra datos insuficientes; monedas distintas no se comparan monetariamente y precios faltantes producen comparación parcial. Los porcentajes y diferencias monetarias usan los helpers exactos existentes.
+
+El detalle también expone `productComparisons`, limitado a productos con `product_id` y snapshots de presentación compatibles. No se convierten unidades ni se usa el Product actual. `GET /api/shopping-history/overview` devuelve un resumen por Store derivado del historial propio, con gasto y ticket promedio solo para compras completas y de moneda compatible; no representa precios generales del supermercado. Guest replica estas reglas con datos locales.

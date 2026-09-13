@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-**F9 — Historial de compras (completada).**
+**F10 — Comparaciones históricas (completada).**
 
 ## Qué existe hoy
 
@@ -52,13 +52,17 @@
 - Repositorio guest de ítems persistente, aislado por guest ID y sesión, con el mismo ciclo activo/histórico y helpers monetarios compartidos.
 - Historial derivado de compras `completed`, con filtro por Store, orden, paginación, detalle readonly, conteos y advertencia de precios pendientes.
 - API autenticada `/api/shopping-history` y `/api/shopping-history/:id`, con aislamiento por propietario y carga de ítems acotada por página.
+- Comparación server-side de una compra finalizada contra la compra anterior, priorizando el mismo supermercado y evitando comparar monedas distintas.
+- Comparación compacta de precios por producto usando únicamente snapshots compatibles de `ShoppingItem`; presentaciones como `1 L` y `500 g` quedan fuera.
+- Resumen histórico por supermercado con compras finalizadas, gasto válido, ticket promedio y cambio entre las dos más recientes.
+- Equivalencia guest local para comparación de compras, productos y resumen por supermercado.
 
 ## Qué no existe
 
-- No existen PriceObservation, evolución histórica de precios, comparación, captura asistida/OCR/cámara, cantidades compradas por peso con reglas específicas, sincronización ni migración guest→cuenta.
+- No existen PriceObservation, predicciones, scraping, IA, gráficos complejos, captura asistida/OCR/cámara, cantidades compradas por peso con reglas específicas, sincronización ni migración guest→cuenta.
 - Google OAuth no fue probado con credenciales reales ni configuración externa de Google Cloud.
-- La baja de supermercados es hard delete por ahora; deberá revisarse cuando exista historial.
-- La baja de productos es hard delete por ahora; deberá revisarse cuando exista historial o referencias.
+- La baja de supermercados sigue siendo hard delete solo para Stores no referenciados; los referenciados se rechazan para proteger el historial. Soft delete queda pendiente.
+- La baja de productos es hard delete por ahora, pero los Products referenciados por ítems históricos quedan protegidos por FK `RESTRICT`.
 - Las sesiones no tienen delete; los Stores referenciados no pueden borrarse, aunque todavía no existe soft delete.
 - No se realizaron commits ni push durante F7; el HEAD existente corresponde al cierre de F6.
 
@@ -66,7 +70,7 @@
 
 Producto web responsive mobile-first, con evolución a PWA; invitado sin registro; cuenta opcional con Google y email; Better Auth sobre PostgreSQL; monolito Next.js con TypeScript/App Router/Tailwind; almacenamiento local preparado para IndexedDB; autorización server-side; imágenes efímeras y datos estructurados; sin monetización, scraping, promociones ni IA compleja en MVP. Better Auth usa sus migraciones oficiales; no se incorporó ORM adicional ni se crearon tablas de negocio. F2.2 conserva el guest ID tras autenticación para una futura importación explícita.
 
-El producto inicial es un asistente personal de compra, no un comparador general de supermercados. F3–F9 mantienen el alcance limitado a contexto de compra, catálogo personal, sesión, presupuesto, ítems, precios derivados e historial propio.
+El producto inicial es un asistente personal de compra, no un comparador general de supermercados. F3–F10 mantienen el alcance limitado a contexto de compra, catálogo personal, sesión, presupuesto, ítems, precios derivados, historial propio y comparaciones derivadas del propio historial.
 
 ## Riesgos abiertos
 
@@ -80,7 +84,7 @@ El producto inicial es un asistente personal de compra, no un comparador general
 
 ## Siguiente fase
 
-La siguiente fase puede abordar **F10 — Comparaciones históricas**, manteniendo fuera PriceObservation, OCR, cámara, lector de barcode y sincronización.
+La siguiente fase puede abordar **F11 — Listas de compras**, manteniendo fuera PriceObservation, OCR, cámara, lector de barcode y sincronización.
 
 ## Instrucción de continuidad
 

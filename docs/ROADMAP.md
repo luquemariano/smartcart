@@ -1,6 +1,6 @@
 # SmartCart — Roadmap
 
-Las fases son pequeñas y verificables. F7 es la fase actual completada; ninguna fase posterior se considera implementada por existir en este documento.
+Las fases son pequeñas y verificables. F10 es la fase actual completada; ninguna fase posterior se considera implementada por existir en este documento.
 
 ## F0 — Foundation
 
@@ -101,10 +101,11 @@ Las fases son pequeñas y verificables. F7 es la fase actual completada; ninguna
 
 ## F10 — Comparaciones históricas
 
-- **Objetivo:** comparar precios propios entre supermercados.
-- **Entregables:** comparación básica por producto/unidad y período, con moneda/unidad visibles.
+- **Estado:** completada; no se incorporó PriceObservation.
+- **Objetivo:** comparar compras, precios de productos y resúmenes por supermercado usando solo el historial propio.
+- **Entregables:** comparación contra compra anterior, estado parcial/insuficiente, porcentaje exacto cuando corresponde, compatibilidad estricta de presentación y moneda, resumen agregado por supermercado, endpoint de overview, UI guest/autenticada y validación de IDs/filtros.
 - **Dependencias:** F9.
-- **Cierre:** resultados trazables a observaciones y sin afirmar cobertura inexistente.
+- **Cierre:** resultados trazables a snapshots históricos, sin inventar precios faltantes ni normalizaciones inseguras; F11 permanece pendiente.
 
 ## F11 — Listas de compras
 

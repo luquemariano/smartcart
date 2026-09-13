@@ -109,6 +109,38 @@ export function subtractMoney(left: string, right: string): string {
   return formatCents(parseCanonicalMoney(left) - parseCanonicalMoney(right));
 }
 
+/** Compares two already validated money strings without converting to Number. */
+export function compareMoney(left: string, right: string): number {
+  const leftCents = parseCanonicalMoney(left);
+  const rightCents = parseCanonicalMoney(right);
+  return leftCents === rightCents ? 0 : leftCents > rightCents ? 1 : -1;
+}
+
+/** Divides money by a positive integer with cent-precise half-up rounding. */
+export function divideMoneyByInteger(value: string, divisor: number): string {
+  if (!Number.isSafeInteger(divisor) || divisor <= 0)
+    throw new MoneyInputError('El divisor no es válido.');
+  return formatCents(roundHalfUp(parseCanonicalMoney(value), BigInt(divisor)));
+}
+
+/** Returns current minus previous as a signed percentage, or null for zero base. */
+export function percentageDifference(
+  current: string,
+  previous: string,
+): string | null {
+  const currentCents = parseCanonicalMoney(current);
+  const previousCents = parseCanonicalMoney(previous);
+  if (previousCents === BigInt(0)) return null;
+  const difference = currentCents - previousCents;
+  const sign = difference < BigInt(0) ? '-' : '';
+  const absoluteDifference = difference < BigInt(0) ? -difference : difference;
+  const percentage = roundHalfUp(
+    absoluteDifference * BigInt(10000),
+    previousCents,
+  );
+  return `${sign}${formatCents(percentage)}`;
+}
+
 /** Returns a percentage with two decimals, preserving values above 100%. */
 export function percentageOfBudget(
   total: string,
