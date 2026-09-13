@@ -13,6 +13,9 @@ import {
   updateLocalShoppingListItem,
 } from '@/lib/local-shopping-list-repository';
 import { listLocalProducts } from '@/lib/local-product-repository';
+import { listLocalStores } from '@/lib/local-store-repository';
+import { listLocalPriceObservations } from '@/lib/local-price-observation-repository';
+import { compareShoppingList } from '@/lib/shopping-list-comparison';
 type Product = {
   id: string;
   name: string;
@@ -35,6 +38,7 @@ export function ShoppingListManager({
   const [products, setProducts] = useState<Product[]>([]);
   const [productId, setProductId] = useState('');
   const [message, setMessage] = useState('');
+  const [comparison, setComparison] = useState<any | null>(null);
   const load = useCallback(async () => {
     if (mode === 'guest' && guestId) {
       const data = listLocalShoppingLists(guestId);
@@ -111,6 +115,52 @@ export function ShoppingListManager({
       setManual('');
       setProductId('');
     });
+  }
+  async function compareList(listId: string) {
+    try {
+      setMessage('');
+      if (mode === 'guest' && guestId) {
+        const local = listLocalShoppingLists(guestId).find(
+          (item) => item.id === listId,
+        );
+        if (!local) return;
+        const prices = local.items.flatMap((item) =>
+          item.productId
+            ? listLocalPriceObservations(guestId, item.productId)
+            : [],
+        );
+        setComparison({
+          list: local,
+          ...compareShoppingList(
+            local.items.map((item) => ({
+              productId: item.productId,
+              name: item.productName,
+              quantity: item.quantity,
+            })),
+            listLocalStores(guestId).map((store) => ({
+              id: store.id,
+              name: store.name,
+              branchName: store.branchName ?? null,
+            })),
+            prices,
+          ),
+        });
+      } else {
+        const response = await fetch(
+          `/api/shopping-lists/${listId}/comparison`,
+        );
+        const data = await response.json();
+        if (!response.ok)
+          throw new Error(data.error ?? 'No pudimos comparar la lista.');
+        setComparison(data);
+      }
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'No pudimos comparar la lista.',
+      );
+    }
   }
   return (
     <section
@@ -201,6 +251,13 @@ export function ShoppingListManager({
                   type="button"
                 >
                   Eliminar
+                </button>
+                <button
+                  className="text-emerald-700"
+                  onClick={() => void compareList(list.id)}
+                  type="button"
+                >
+                  Comparar supermercados
                 </button>
               </div>
             </li>
@@ -335,6 +392,61 @@ export function ShoppingListManager({
               Empezar compra con esta lista
             </button>
           </div>
+        </div>
+      )}
+      {comparison && (
+        <div
+          className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+          aria-label="Comparación de supermercados"
+        >
+          <h3 className="font-bold">Comparación: {comparison.list.name}</h3>
+          {comparison.stores.length === 0 ? (
+            <p className="mt-2 text-sm text-slate-700">
+              No hay precios conocidos para comparar.
+            </p>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {comparison.stores.map((store: any) => (
+                <li className="rounded-lg bg-white p-3" key={store.store.id}>
+                  <p className="font-semibold">
+                    {store.store.name}
+                    {store.store.branchName
+                      ? ` · ${store.store.branchName}`
+                      : ''}
+                  </p>
+                  <p className="text-sm text-slate-700">
+                    ${store.totalKnown} · {store.pricedItems}/
+                    {comparison.list.items?.filter(
+                      (item: any) => item.productId,
+                    ).length ?? store.totalItems}{' '}
+                    productos · {store.coveragePercent}% cobertura
+                  </p>
+                  {store.items.filter((item: any) => item.status !== 'priced')
+                    .length > 0 && (
+                    <p className="text-sm text-rose-700">
+                      Faltan:{' '}
+                      {store.items
+                        .filter((item: any) => item.status !== 'priced')
+                        .map((item: any) => item.name)
+                        .join(', ')}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          {comparison.bestStore ? (
+            <p className="mt-3 font-semibold text-emerald-800">
+              Mejor opción: {comparison.bestStore.name}
+            </p>
+          ) : (
+            comparison.stores.length > 0 && (
+              <p className="mt-3 text-sm text-slate-700">
+                No hay suficiente cobertura para determinar el supermercado más
+                barato.
+              </p>
+            )
+          )}
         </div>
       )}
       {message && (

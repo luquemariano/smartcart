@@ -1,6 +1,6 @@
 # SmartCart — Roadmap
 
-Las fases son pequeñas y verificables. F14 es la última fase completada; F15 es la siguiente fase y todavía no fue iniciada.
+Las fases son pequeñas y verificables. F15 es la última fase completada; F16 es la siguiente fase y todavía no fue iniciada.
 
 ## F0 — Foundation
 
@@ -137,11 +137,11 @@ Las fases son pequeñas y verificables. F14 es la última fase completada; F15 e
 
 ## F15 — Comparación de listas entre supermercados
 
-- **Estado:** siguiente fase; no iniciada.
+- **Estado:** completada y cerrada.
 - **Objetivo:** usar `PriceObservation` para estimar cuánto costaría una `ShoppingList` en distintos `Store` según precios conocidos.
 - **Entregables:** estimación por lista y Store, cobertura explícita de precios faltantes y consultas históricas acotadas.
 - **Dependencias:** F11 y F14.
-- **Cierre:** comparación transparente, sin inventar precios y sin incluir promociones o costos externos.
+- **Cierre:** comparación transparente, sin inventar precios y sin incluir promociones o costos externos. Validada con PostgreSQL real, guest, ownership, cobertura, latest por Store, cantidades decimales y selección determinista del mejor Store.
 
 ## F16 — Promociones / costo real opcional
 
@@ -181,4 +181,8 @@ Importación explícita y transaccional de Stores, Products, compras, ítems y l
 
 ### F14 — PriceObservation (completada)
 
-Historial normalizado de precios de Products por Store y fecha, generado al finalizar compras con precio y Store válidos. Incluye consulta por Product, latest price por Store, backfill explícito e idempotente, soporte guest y reconstrucción durante F12. La comparación completa de listas por supermercado queda fuera de F14 y no fue iniciada.
+Historial normalizado de precios de Products por Store y fecha, generado al finalizar compras con precio y Store válidos. Incluye consulta por Product, latest price por Store, backfill explícito e idempotente, soporte guest y reconstrucción durante F12.
+
+### F15 — Comparación de listas entre supermercados (completada)
+
+Compara una ShoppingList entre Stores propios usando únicamente PriceObservation conocidas y latest por Product+Store. Mantiene dinero exacto, cantidades decimales, cobertura y faltantes explícitos; los ítems manuales quedan fuera del total. El ganador requiere al menos dos Stores completos, y guest reutiliza el mismo calculador.

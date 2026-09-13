@@ -1,6 +1,6 @@
 # SmartCart
 
-SmartCart es un asistente personal de compras que busca ayudar a saber cuánto se lleva gastado antes de llegar a la caja. El proyecto se encuentra en **F10 — Comparaciones históricas**.
+SmartCart es un asistente personal de compras que busca ayudar a saber cuánto se lleva gastado antes de llegar a la caja. El proyecto se encuentra en **F15 — Comparación de listas entre supermercados** (completada y cerrada).
 
 ## Requisitos
 
@@ -23,7 +23,7 @@ Durante una compra activa se puede agregar un producto por código de barras. Se
 
 Al finalizar una compra con Store, los ítems de catálogo que tienen precio generan `PriceObservation`, el historial normalizado Product + Store + fecha. Los ítems manuales, compras sin Store y precios faltantes se omiten. El backfill histórico es explícito y reejecutable con `npm run db:backfill-price-observations` después de aplicar la migración de dominio.
 
-F14 — PriceObservation está completada y validada contra PostgreSQL real. La migración 0008, el historial por Product, latest price por Store, soporte guest, importación F12, backfill e idempotencia están cerrados. La siguiente fase es F15 — Comparación de listas entre supermercados; todavía no fue iniciada.
+F14 — PriceObservation está completada y validada contra PostgreSQL real. F15 — Comparación de listas entre supermercados también está completada: usa únicamente PriceObservation conocidas, latest por Product+Store, dinero exacto, cobertura explícita, ownership y el mismo calculador para guest. La siguiente fase es F16 — Promociones / costo real opcional; todavía no fue iniciada.
 
 ## Ejecución con Docker
 

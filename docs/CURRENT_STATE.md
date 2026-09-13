@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-**F14 — PriceObservation (completada y cerrada).** HEAD: `7ac479f` (`docs: close F14 price observations`). F15 todavía no fue iniciada.
+**F15 — Comparación de listas entre supermercados (completada y cerrada).** HEAD: `1f4bcaf`. F14 permanece completada y cerrada; F16 todavía no fue iniciada.
 
 ## Qué existe hoy
 
@@ -56,6 +56,8 @@
 - Comparación compacta de precios por producto usando únicamente snapshots compatibles de `ShoppingItem`; presentaciones como `1 L` y `500 g` quedan fuera.
 - Resumen histórico por supermercado con compras finalizadas, gasto válido, ticket promedio y cambio entre las dos más recientes.
 - Equivalencia guest local para comparación de compras, productos y resumen por supermercado.
+- Comparación de ShoppingLists entre Stores propios usando PriceObservation latest por Product+Store, con dinero exacto, cantidades decimales, cobertura, faltantes y ganador solo con al menos dos Stores completos.
+- Endpoint autenticado `/api/shopping-lists/:id/comparison` con ownership server-side y calculador compartido para guest.
 
 ## Qué no existe
 
@@ -84,7 +86,7 @@ El producto inicial es un asistente personal de compra, no un comparador general
 
 ## Siguiente fase
 
-La siguiente fase es **F15 — Comparación de listas entre supermercados**. F15 todavía no fue iniciada.
+La siguiente fase es **F16 — Promociones / costo real opcional**. F16 todavía no fue iniciada.
 
 ## Instrucción de continuidad
 

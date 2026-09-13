@@ -321,3 +321,10 @@
 - **Motivo:** evitar comparar envases o unidades incompatibles y conservar la semántica `null != 0`.
 - **Consecuencias:** observaciones sin pareja compatible se muestran como datos insuficientes o comparación parcial; no se crea `PriceObservation` ni se normalizan unidades en F10.
 - **Estado:** aprobada para F10.
+
+## ADR-047 — Comparación de listas con precios observados
+
+- **Decisión:** comparar ShoppingLists entre Stores propios usando únicamente el latest `PriceObservation` ARS por Product y Store. Los ítems manuales o sin precio observado se muestran como no comparables/faltantes y no se incluyen en el total. El cálculo monetario y de cantidades es exacto; no se convierten unidades ni se agregan promociones, promedios o costos externos.
+- **Ganador:** solo se informa cuando existen al menos dos Stores completos al 100% y no hay empate; los Stores parciales nunca ganan.
+- **Consecuencias:** API autenticada y guest comparten el calculador; la API aplica ownership server-side y obtiene precios en batch. F16 queda reservada para promociones y costo real opcional.
+- **Estado:** aprobada y cerrada para F15.
