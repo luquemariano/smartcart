@@ -11,11 +11,11 @@ Las fases son pequeñas y verificables. F0 es la fase actual; ninguna fase poste
 
 ## F1 — Bootstrap técnico
 
-- **Estado:** implementación completada; cierre operativo pendiente de Docker Desktop.
+- **Estado:** completada.
 - **Objetivo:** crear la base ejecutable del monolito.
 - **Entregables:** Next.js 16.3.5 + TypeScript + App Router, Tailwind 4, ESLint 9, Prettier, Docker multi-stage, Compose con PostgreSQL 17, variables de entorno, manifest PWA base, página técnica y health endpoint.
 - **Dependencias:** F0.
-- **Cierre:** pendiente únicamente de levantar Docker Desktop y verificar PostgreSQL healthy y la aplicación dentro de Compose. Los demás checks y verificaciones locales pasan.
+- **Cierre:** aplicación, PostgreSQL healthy y validaciones técnicas verificadas dentro de Compose.
 
 ## F2 — Identidad y modo invitado
 
@@ -32,6 +32,14 @@ Las fases son pequeñas y verificables. F0 es la fase actual; ninguna fase poste
 - **Entregables:** handler `/api/auth/[...all]`, cliente React, helper server-side, migración oficial, UI mínima de estados y tests de guest identity.
 - **Dependencias:** F1 y PostgreSQL.
 - **Cierre:** checks de código pasan; migración oficial creó y verificó las tablas estándar; signup/signin email funciona localmente. Google queda sujeto a credenciales externas y no fue probado mediante OAuth real.
+
+### F2.2 — Experiencia de identidad y acceso
+
+- **Estado:** completada; Google real pendiente de validación externa.
+- **Objetivo:** cerrar la entrada rápida, estados de acceso, errores y transición conceptual guest→cuenta.
+- **Entregables:** UX mobile-first, Google condicional, email secundario, estados autenticado/invitado, logout, loading/error states, helpers de guest pendiente y tests relevantes.
+- **Dependencias:** F2.1.
+- **Cierre:** guest no requiere backend, logout no crea guest, email funciona localmente, estados UI están cubiertos y Google queda documentado como única prueba externa pendiente.
 
 ## F3 — Supermercados
 

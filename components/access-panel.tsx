@@ -2,7 +2,10 @@
 
 import { FormEvent, useState } from 'react';
 import { authClient } from '@/lib/auth-client';
-import { getGuestIdentity, resetGuestIdentity } from '@/lib/guest-identity';
+import {
+  clearGuestIdentityAfterImport,
+  getGuestIdentity,
+} from '@/lib/guest-identity';
 
 type EmailMode = 'signin' | 'signup';
 
@@ -20,21 +23,62 @@ export function AccessPanel({
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
+
+  function friendlyAuthError(
+    error: { code?: string; message?: string } | null,
+  ) {
+    switch (error?.code) {
+      case 'INVALID_EMAIL':
+        return 'Ingresá un email válido.';
+      case 'INVALID_PASSWORD':
+      case 'INVALID_EMAIL_OR_PASSWORD':
+        return 'El email o la contraseña no son correctos.';
+      case 'USER_ALREADY_EXISTS':
+      case 'EMAIL_ALREADY_EXISTS':
+        return 'Ese email ya está registrado.';
+      case 'PASSWORD_TOO_SHORT':
+        return 'La contraseña debe tener al menos 8 caracteres.';
+      default:
+        return 'No pudimos completar la solicitud. Revisá los datos e intentá nuevamente.';
+    }
+  }
 
   async function handleEmail(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setMessage('');
 
-    const result =
-      emailMode === 'signup'
-        ? await authClient.signUp.email({ name, email, password })
-        : await authClient.signIn.email({ email, password });
+    try {
+      const result =
+        emailMode === 'signup'
+          ? await authClient.signUp.email({ name, email, password })
+          : await authClient.signIn.email({ email, password });
 
-    setBusy(false);
-    setMessage(
-      result.error?.message ?? 'Listo. Revisá el estado de tu cuenta.',
-    );
+      setMessage(
+        result.error
+          ? friendlyAuthError(result.error)
+          : emailMode === 'signup'
+            ? 'Cuenta creada correctamente.'
+            : 'Sesión iniciada correctamente.',
+      );
+    } catch {
+      setMessage('No pudimos completar la solicitud. Intentá nuevamente.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleGoogle() {
+    setGoogleBusy(true);
+    setMessage('');
+    try {
+      const result = await authClient.signIn.social({ provider: 'google' });
+      if (result?.error) setMessage(friendlyAuthError(result.error));
+    } catch {
+      setMessage('No pudimos continuar con Google. Intentá nuevamente.');
+      setGoogleBusy(false);
+    }
   }
 
   if (isPending)
@@ -47,9 +91,22 @@ export function AccessPanel({
           <p className="text-sm font-semibold text-emerald-700">
             Estado autenticado
           </p>
-          <p className="mt-1 text-slate-700">
-            {session.user.name || session.user.email}
-          </p>
+          <div className="mt-2 flex items-center gap-3">
+            {session.user.image && (
+              <span
+                aria-label="Avatar"
+                className="h-10 w-10 rounded-full bg-cover bg-center"
+                role="img"
+                style={{ backgroundImage: `url(${session.user.image})` }}
+              />
+            )}
+            <div>
+              <p className="text-slate-700">
+                {session.user.name || 'Sin nombre'}
+              </p>
+              <p className="text-sm text-slate-500">{session.user.email}</p>
+            </div>
+          </div>
         </div>
         <button
           className="min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
@@ -75,12 +132,19 @@ export function AccessPanel({
         <button
           className="min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           onClick={() => {
-            resetGuestIdentity();
+            clearGuestIdentityAfterImport();
             setGuest(false);
           }}
           type="button"
         >
           Salir y borrar identidad local
+        </button>
+        <button
+          className="min-h-11 w-full rounded-xl border border-blue-200 px-4 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+          onClick={() => setGuest(false)}
+          type="button"
+        >
+          Volver a opciones de acceso
         </button>
       </div>
     );
@@ -90,11 +154,11 @@ export function AccessPanel({
     <div className="space-y-4" data-testid="access-state">
       <button
         className="min-h-12 w-full rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-        disabled={!googleConfigured}
-        onClick={() => authClient.signIn.social({ provider: 'google' })}
+        disabled={!googleConfigured || googleBusy}
+        onClick={handleGoogle}
         type="button"
       >
-        Continuar con Google
+        {googleBusy ? 'Continuando…' : 'Continuar con Google'}
       </button>
       {!googleConfigured && (
         <p className="text-xs text-slate-500">
@@ -173,7 +237,9 @@ export function AccessPanel({
             type="submit"
           >
             {busy
-              ? 'Procesando…'
+              ? emailMode === 'signup'
+                ? 'Creando cuenta…'
+                : 'Entrando…'
               : emailMode === 'signup'
                 ? 'Crear cuenta'
                 : 'Entrar'}

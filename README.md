@@ -17,7 +17,7 @@ npm run dev
 
 Copiar `.env.example` a `.env.local` si se va a usar PostgreSQL local y generar un secret con `openssl rand -base64 32`. Abrir `http://localhost:3000`. La ruta técnica `http://localhost:3000/api/health` debe devolver `{"status":"ok"}`.
 
-La pantalla permite continuar con Google cuando ambas credenciales existen, entrar/registrarse con email o usar un invitado local. Sin `BETTER_AUTH_SECRET`, el desarrollo usa un valor explícitamente no productivo; producción falla al iniciar para evitar una configuración insegura.
+La pantalla permite continuar con Google cuando ambas credenciales existen, entrar/registrarse con email o usar un invitado local. El proyecto está en **F2.2 — Experiencia de identidad y acceso**. Sin `BETTER_AUTH_SECRET`, el desarrollo usa un valor explícitamente no productivo; producción falla al iniciar para evitar una configuración insegura.
 
 ## Ejecución con Docker
 
@@ -42,7 +42,7 @@ npm test
 npm run auth:migrate
 ```
 
-Los tests actuales cubren la identidad local de invitado. No intentan probar OAuth real.
+Los tests actuales cubren identidad local, estados de acceso y formulario email. No intentan probar OAuth real.
 
 ## Documentación
 

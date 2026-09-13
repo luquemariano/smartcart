@@ -12,7 +12,7 @@ export default function Home() {
           Asistente personal de compras
         </h1>
         <p className="mt-4 text-base leading-7 text-slate-600">
-          Bootstrap técnico activo.
+          Controlá cuánto llevás gastado mientras hacés tus compras.
         </p>
         <div className="mt-8 border-t border-slate-200 pt-6">
           <AccessPanel googleConfigured={isGoogleConfigured} />

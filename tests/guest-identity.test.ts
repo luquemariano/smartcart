@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   GUEST_IDENTITY_KEY,
+  clearGuestIdentityAfterImport,
   getGuestIdentity,
+  getPendingGuestIdentity,
   resetGuestIdentity,
 } from '@/lib/guest-identity';
 
@@ -25,5 +27,13 @@ describe('guest identity', () => {
     resetGuestIdentity();
 
     expect(window.localStorage.getItem(GUEST_IDENTITY_KEY)).toBeNull();
+  });
+
+  it('keeps a pending identity available until a future import clears it', () => {
+    const identity = getGuestIdentity();
+
+    expect(getPendingGuestIdentity()).toBe(identity);
+    clearGuestIdentityAfterImport();
+    expect(getPendingGuestIdentity()).toBeNull();
   });
 });

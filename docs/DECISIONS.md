@@ -118,3 +118,24 @@
 - **Motivo:** impedir que un `userId` enviado por el cliente permita acceso cruzado.
 - **Consecuencias:** toda futura consulta/mutación deberá filtrar por el usuario de la sesión validada.
 - **Estado:** aprobada.
+
+## ADR-018 — Google primero, email secundario
+
+- **Decisión:** ordenar el acceso como Google, invitado y email; Google es el CTA principal para cuentas.
+- **Motivo:** reduce fricción sin bloquear el uso básico.
+- **Consecuencias:** Google se habilita solo con credenciales; email conserva una interfaz secundaria.
+- **Estado:** aprobada.
+
+## ADR-019 — Guest ID se conserva hasta importación explícita
+
+- **Decisión:** autenticarse no borra automáticamente el guest ID; se conserva hasta una futura importación exitosa.
+- **Motivo:** los datos locales futuros podrían necesitar asociarse a la nueva cuenta.
+- **Consecuencias:** la importación deberá ser idempotente, server-side y autorizada; logout no crea guest automáticamente.
+- **Estado:** aprobada.
+
+## ADR-020 — Errores de autenticación traducidos
+
+- **Decisión:** no mostrar mensajes crudos de Better Auth; mapearlos a mensajes breves en español.
+- **Motivo:** evitar filtrar detalles internos y reducir confusión en móvil.
+- **Consecuencias:** códigos nuevos requieren actualizar el mapeo y mantener un fallback genérico.
+- **Estado:** aprobada.

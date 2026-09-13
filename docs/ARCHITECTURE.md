@@ -31,6 +31,8 @@ Google OAuth es el método principal de cuenta y solo se habilita cuando existen
 
 El invitado es deliberadamente local: no crea usuario, sesión Better Auth ni registro PostgreSQL. `localStorage` guarda únicamente un identificador aleatorio seguro sin PII. No se envía automáticamente al servidor. La identidad puede resetearse explícitamente.
 
+Mientras una cuenta se autentica, el guest ID no se elimina automáticamente. `getPendingGuestIdentity()` permite que una futura rutina de importación lo lea y `clearGuestIdentityAfterImport()` lo elimine únicamente después de una importación explícita y exitosa. Logout solo cierra la sesión Better Auth; no crea una identidad invitada nueva.
+
 Los helpers server-side obtienen la sesión desde los headers de la request con `auth.api.getSession`. Ningún recurso futuro puede autorizarse con un `userId` recibido del navegador: el propietario debe derivarse de la sesión validada en servidor.
 
 ## 6. Offline y sincronización futura
