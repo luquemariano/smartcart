@@ -29,7 +29,11 @@ La tabla no replica ni referencia el esquema de Better Auth: el propietario se v
 
 ### Product
 
-Producto reutilizable o creado manualmente. Obligatorios: `id`, propietario si es privado, nombre normalizado/presentado y timestamps. Nullable: `barcode`, marca, categoría, unidad de referencia y notas. El código de barras, si existe, debe estar normalizado y no puede ser requisito de creación.
+Producto reutilizable o creado manualmente. En PostgreSQL F4: `id`, `owner_user_id`, `name`, `normalized_name`, `duplicate_key` y timestamps. Nullable: `brand`/`normalized_brand`, `barcode`/`normalized_barcode`, `quantity_value NUMERIC(19,4)` y `quantity_unit`. La taxonomía inicial de unidades es `g`, `kg`, `ml`, `l` y `unit`, con etiquetas españolas en la UI.
+
+El barcode se almacena como `text`, admite entre 8 y 14 dígitos, preserva ceros iniciales y es opcional. La unicidad del barcode es por propietario cuando existe. La unicidad manual usa nombre, marca, cantidad y unidad normalizados dentro del propietario; no existe catálogo global ni unicidad entre usuarios.
+
+Cantidad y unidad se guardan separadas. La cantidad acepta hasta cuatro decimales y debe ser positiva cuando se informa; la unidad es obligatoria si hay cantidad y viceversa. Helpers puros convierten `kg → g`, `l → ml` y mantienen `unit` como conteo, sin comparar masa, volumen y conteo entre sí. No se persisten precios en F4.
 
 ### ShoppingSession
 

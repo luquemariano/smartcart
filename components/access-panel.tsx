@@ -7,6 +7,7 @@ import {
   getGuestIdentity,
 } from '@/lib/guest-identity';
 import { StoreManager } from '@/components/store-manager';
+import { ProductManager } from '@/components/product-manager';
 
 type EmailMode = 'signin' | 'signup';
 
@@ -118,6 +119,7 @@ export function AccessPanel({
           Cerrar sesión
         </button>
         <StoreManager mode="authenticated" />
+        <ProductManager mode="authenticated" />
       </div>
     );
   }
@@ -143,6 +145,7 @@ export function AccessPanel({
           Salir y borrar identidad local
         </button>
         <StoreManager guestId={guestId} mode="guest" />
+        <ProductManager guestId={guestId} mode="guest" />
         <button
           className="min-h-11 w-full rounded-xl border border-blue-200 px-4 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-50"
           onClick={() => setGuest(false)}

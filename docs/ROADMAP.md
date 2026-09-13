@@ -1,6 +1,6 @@
 # SmartCart — Roadmap
 
-Las fases son pequeñas y verificables. F3 es la fase actual completada; ninguna fase posterior se considera implementada por existir en este documento.
+Las fases son pequeñas y verificables. F4 es la fase actual completada; ninguna fase posterior se considera implementada por existir en este documento.
 
 ## F0 — Foundation
 
@@ -51,10 +51,11 @@ Las fases son pequeñas y verificables. F3 es la fase actual completada; ninguna
 
 ## F4 — Productos
 
+- **Estado:** completada.
 - **Objetivo:** registrar productos manuales y frecuentes.
-- **Entregables:** alta, edición, búsqueda básica, cantidades/unidades y barcode opcional.
+- **Entregables:** modelo `products` personal, migración Drizzle, CRUD API autorizado, búsqueda básica por nombre/marca/barcode, barcode string opcional, marca, presentación decimal estructurada, taxonomía inicial de unidades, conversiones exactas y CRUD local guest.
 - **Dependencias:** F3.
-- **Cierre:** un producto puede existir sin código y puede reutilizarse.
+- **Cierre:** un producto puede existir sin código, puede editarse para agregarlo después, se busca y reutiliza dentro del catálogo del propietario; invitados permanecen en localStorage y no se mezclan.
 
 ## F5 — Sesión de compra
 

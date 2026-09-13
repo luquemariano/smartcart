@@ -160,3 +160,24 @@
 - **Motivo:** el invitado no debe crear registros cloud y todavía no existe historial que requiera conservar referencias.
 - **Consecuencias:** la migración guest→cuenta y una eventual baja lógica quedan para fases posteriores; la clave local no es un mecanismo de backup.
 - **Estado:** aprobada para F3; revisar antes de implementar historial.
+
+## ADR-024 — Catálogo personal de productos en F4
+
+- **Decisión:** cada producto pertenece a un usuario registrado; no se crea catálogo global ni relación con supermercados.
+- **Motivo:** mantener el dominio pequeño y permitir que un producto se use después en múltiples supermercados mediante observaciones.
+- **Consecuencias:** la futura identidad global y metadata por usuario requerirá una migración explícita; F4 no implementa precios ni historial.
+- **Estado:** aprobada para F4.
+
+## ADR-025 — Barcode textual y presentación estructurada
+
+- **Decisión:** guardar barcode como texto opcional y separar `quantity_value` decimal de `quantity_unit`, con unidades iniciales `g`, `kg`, `ml`, `l` y `unit`.
+- **Motivo:** preservar ceros iniciales, aceptar EAN/UPC/GTIN razonables y preparar precio por unidad base sin depender de strings libres.
+- **Consecuencias:** no se implementa lector real; las conversiones usan aritmética decimal exacta y las categorías incompatibles no se comparan.
+- **Estado:** aprobada para F4.
+
+## ADR-026 — Productos guest locales y hard delete inicial
+
+- **Decisión:** usar `smartcart_guest_products_v1:<guestId>`, exponer helpers de lectura/limpieza futura y permitir hard delete mientras no haya referencias.
+- **Motivo:** conservar el aislamiento guest y evitar migrar productos antes de definir la estrategia general guest→cuenta.
+- **Consecuencias:** el almacenamiento local no es backup; al existir historial se deberá archivar o impedir borrado destructivo.
+- **Estado:** aprobada para F4.
