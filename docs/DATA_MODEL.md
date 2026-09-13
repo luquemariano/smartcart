@@ -11,6 +11,12 @@
 
 ## 2. Entidades mínimas
 
+### ShoppingList y ShoppingListItem (F11)
+
+`ShoppingList` pertenece al usuario autenticado y contiene un nombre normalizado en los límites de la aplicación. `ShoppingListItem` conserva snapshot de nombre, marca, barcode y presentación, además de `quantity NUMERIC(12,3)` e `is_checked`. Un `product_id` opcional mantiene la referencia al Product sin usar su nombre actual para renderizar. Los productos de catálogo se deduplican por lista incrementando cantidad; los manuales no se deduplican.
+
+Una lista es una plantilla: marcar/desmarcar y “Desmarcar todos” no modifica compras. Duplicar copia snapshots y cantidades, reiniciando checks. Importar a una `ShoppingSession` crea `ShoppingItem` independientes con `unit_price = null`; no se copian precios ni se crea asociación histórica obligatoria. La FK de `shopping_list_items` usa cascade hacia la lista y restrict hacia Product.
+
 ### Tablas de Better Auth
 
 Better Auth crea y mantiene sus tablas estándar mediante su migración oficial: `user`, `session`, `account` y `verification`, además de cualquier campo o tabla que requiera la versión instalada. Estas tablas pertenecen exclusivamente a identidad/sesiones y no son entidades de negocio de SmartCart. No se crean versiones paralelas manuales.

@@ -17,7 +17,7 @@ npm run dev
 
 Copiar `.env.example` a `.env.local` si se va a usar PostgreSQL local y generar un secret con `openssl rand -base64 32`. Abrir `http://localhost:3000`. La ruta técnica `http://localhost:3000/api/health` debe devolver `{"status":"ok"}`.
 
-La pantalla permite continuar con Google cuando ambas credenciales existen, entrar/registrarse con email o usar un invitado local. Luego permite administrar supermercados, un catálogo personal de productos y una sesión de compra con ítems: las cuentas usan PostgreSQL mediante `/api/stores`, `/api/products` y `/api/shopping-sessions`; los invitados usan `localStorage` versionado aislado por guest ID. Sin `BETTER_AUTH_SECRET`, el desarrollo usa un valor explícitamente no productivo; producción falla al iniciar para evitar una configuración insegura.
+La pantalla permite continuar con Google cuando ambas credenciales existen, entrar/registrarse con email o usar un invitado local. Luego permite administrar supermercados, productos, listas reutilizables y sesiones de compra: las cuentas usan PostgreSQL mediante `/api/stores`, `/api/products`, `/api/shopping-lists` y `/api/shopping-sessions`; los invitados usan `localStorage` versionado aislado por guest ID. Las listas son plantillas y al importarse crean ítems independientes sin precios. Sin `BETTER_AUTH_SECRET`, el desarrollo usa un valor explícitamente no productivo; producción falla al iniciar para evitar una configuración insegura.
 
 ## Ejecución con Docker
 

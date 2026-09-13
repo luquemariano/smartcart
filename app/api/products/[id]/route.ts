@@ -85,7 +85,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
     }
     if (error instanceof ProductReferencedError) {
       return NextResponse.json(
-        { error: 'No podés eliminar un producto usado en una compra.' },
+        { error: 'No podés eliminar un producto usado en una compra o lista.' },
         { status: 409 },
       );
     }

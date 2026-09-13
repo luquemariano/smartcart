@@ -9,6 +9,7 @@ import {
 import { StoreManager } from '@/components/store-manager';
 import { ProductManager } from '@/components/product-manager';
 import { ShoppingSessionManager } from '@/components/shopping-session-manager';
+import { ShoppingListManager } from '@/components/shopping-list-manager';
 
 type EmailMode = 'signin' | 'signup';
 
@@ -122,6 +123,7 @@ export function AccessPanel({
         <StoreManager mode="authenticated" />
         <ProductManager mode="authenticated" />
         <ShoppingSessionManager mode="authenticated" />
+        <ShoppingListManager mode="authenticated" />
       </div>
     );
   }
@@ -149,6 +151,7 @@ export function AccessPanel({
         <StoreManager guestId={guestId} mode="guest" />
         <ProductManager guestId={guestId} mode="guest" />
         <ShoppingSessionManager guestId={guestId} mode="guest" />
+        <ShoppingListManager guestId={guestId} mode="guest" />
         <button
           className="min-h-11 w-full rounded-xl border border-blue-200 px-4 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-50"
           onClick={() => setGuest(false)}

@@ -141,3 +141,7 @@ Las fases son pequeñas y verificables. F10 es la fase actual completada; ningun
 - **Entregables:** Docker/hosting, migraciones, backups, observabilidad, políticas de secretos y runbook.
 - **Dependencias:** F14.
 - **Cierre:** despliegue repetible, rollback conocido y controles de seguridad revisados.
+
+### F11 — Listas reutilizables (implementada)
+
+Plantillas de compra con productos de catálogo o manuales, snapshots, cantidades, checks, duplicación, reset, guest local e importación a ShoppingSession. La siguiente fase puede explorar observaciones de precio y comparación sin acoplarlas a esta plantilla.

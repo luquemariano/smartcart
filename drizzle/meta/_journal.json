@@ -43,6 +43,13 @@
       "when": 1789277000000,
       "tag": "0005_add-shopping-item-price",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789279000000,
+      "tag": "0006_add-shopping-lists",
+      "breakpoints": true
     }
   ]
 }
