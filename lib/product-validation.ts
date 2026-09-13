@@ -11,7 +11,7 @@ export const quantityUnitLabels: Record<QuantityUnit, string> = {
   unit: 'unidades',
 };
 
-const optionalText = (max: number) =>
+export const optionalProductText = (max: number) =>
   z
     .string()
     .trim()
@@ -20,7 +20,7 @@ const optionalText = (max: number) =>
     .nullable()
     .transform((value) => value || null);
 
-const optionalBarcode = z
+export const optionalProductBarcode = z
   .string()
   .trim()
   .max(14)
@@ -41,7 +41,7 @@ function canonicalDecimal(value: string): string {
     : normalizedWhole;
 }
 
-const optionalQuantityValue = z
+export const optionalProductQuantityValue = z
   .preprocess(
     (value) => {
       if (value === undefined || value === null || value === '') return null;
@@ -63,9 +63,9 @@ const optionalQuantityValue = z
 export const productInputSchema = z
   .object({
     name: z.string().trim().min(1, 'El nombre es obligatorio.').max(160),
-    brand: optionalText(120),
-    barcode: optionalBarcode,
-    quantityValue: optionalQuantityValue,
+    brand: optionalProductText(120),
+    barcode: optionalProductBarcode,
+    quantityValue: optionalProductQuantityValue,
     quantityUnit: z
       .enum(quantityUnits)
       .optional()

@@ -196,6 +196,34 @@
 - **Consecuencias:** no se persisten floats; se rechazan coma decimal, separadores de miles, valores negativos, cero, especiales y más de dos decimales. El presupuesto no bloquea la finalización y F6 no calcula totales porque aún no existen ítems.
 - **Estado:** aprobada para F6.
 
+## ADR-033 — ShoppingItem conserva snapshot del catálogo
+
+- **Decisión:** `ShoppingItem` guarda `product_id` opcional y snapshots de nombre, marca, barcode y presentación (`product_quantity_value`/`product_quantity_unit`). Un producto manual usa `product_id = null`.
+- **Motivo:** el histórico debe conservar lo que se agregó aunque el Product maestro cambie después, y una compra no debe obligar a crear primero un producto de catálogo.
+- **Consecuencias:** el servidor construye el snapshot desde el Product autorizado y no acepta snapshots arbitrarios para referencias de catálogo. No se crea automáticamente un Product manual.
+- **Estado:** aprobada para F7.
+
+## ADR-034 — Cantidad de ítem decimal y semántica de presentación
+
+- **Decisión:** `quantity` usa `NUMERIC(12,3)`, es positiva y se transporta como string decimal. La presentación del producto describe un envase/unidad; `quantity` indica cuántas presentaciones se agregan.
+- **Motivo:** soportar cantidades como `1.5` sin float y sin resolver todavía el dominio completo de venta por peso.
+- **Consecuencias:** `Leche 1 L` con `quantity = 3` significa tres envases; el precio y la semántica de kilogramos comprados quedan para fases posteriores.
+- **Estado:** aprobada para F7.
+
+## ADR-035 — Deduplicación conservadora de ShoppingItems
+
+- **Decisión:** la misma referencia `product_id` solo tiene una fila por sesión y una nueva alta incrementa `quantity` atómicamente. Los productos manuales no se deduplican.
+- **Motivo:** evitar filas repetidas por doble tap sin inventar equivalencias para nombres manuales.
+- **Consecuencias:** una unicidad `(shopping_session_id, product_id)` permite el upsert seguro; PostgreSQL mantiene múltiples manuales porque `NULL` no colisiona en la restricción única.
+- **Estado:** aprobada para F7.
+
+## ADR-036 — ShoppingItems históricos y Product protegido
+
+- **Decisión:** solo una sesión `active` permite alta, edición y eliminación de ítems. Los ítems de sesiones `completed` solo se listan. `shopping_session_id` y `product_id` usan `ON DELETE RESTRICT`; un Product referenciado devuelve `409` al intentar eliminarlo.
+- **Motivo:** impedir pérdida destructiva del historial y conservar integridad entre snapshot y referencias.
+- **Consecuencias:** finalizar no borra ni transforma ítems; el snapshot sigue disponible aunque el catálogo se modifique, pero el Product no puede eliminarse mientras exista la referencia.
+- **Estado:** aprobada para F7.
+
 ## ADR-031 — ARS como moneda inicial del presupuesto
 
 - **Decisión:** agregar `currency VARCHAR(3) NOT NULL DEFAULT 'ARS'`; el servidor asigna `ARS` y no acepta `currency` del cliente. La UI usa `Intl.NumberFormat('es-AR')` sin selector de moneda.

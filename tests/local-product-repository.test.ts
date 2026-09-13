@@ -6,6 +6,8 @@ import {
   listLocalProducts,
   updateLocalProduct,
 } from '@/lib/local-product-repository';
+import { addLocalShoppingItem } from '@/lib/local-shopping-item-repository';
+import { startLocalShoppingSession } from '@/lib/local-shopping-session-repository';
 
 const input = {
   name: 'Spaghetti',
@@ -40,5 +42,19 @@ describe('local product repository', () => {
     expect(() =>
       createLocalProduct('guest-a', { ...input, barcode: null }),
     ).toThrow('DUPLICATE_PRODUCT');
+  });
+
+  it('protects products referenced by a local shopping item', () => {
+    const product = createLocalProduct('guest-a', input);
+    const session = startLocalShoppingSession('guest-a', null);
+    addLocalShoppingItem(
+      'guest-a',
+      session.id,
+      { productId: product.id, quantity: '1' },
+      product,
+    );
+    expect(() => deleteLocalProduct('guest-a', product.id)).toThrow(
+      'REFERENCED_PRODUCT',
+    );
   });
 });

@@ -6,6 +6,7 @@ import {
   type ProductData,
   type ProductInput,
 } from '@/lib/product-validation';
+import { hasLocalShoppingItemForProduct } from '@/lib/local-shopping-item-repository';
 
 export type LocalProduct = ProductData & {
   id: string;
@@ -113,6 +114,9 @@ export function deleteLocalProduct(guestId: string, id: string): void {
   const products = read(guestId);
   if (!products.some((product) => product.id === id)) {
     throw new Error('PRODUCT_NOT_FOUND');
+  }
+  if (hasLocalShoppingItemForProduct(guestId, id)) {
+    throw new Error('REFERENCED_PRODUCT');
   }
   write(
     guestId,

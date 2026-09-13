@@ -39,7 +39,7 @@ Cantidad y unidad se guardan separadas. La cantidad acepta hasta cuatro decimale
 
 Compra concreta en curso o finalizada. En PostgreSQL F6: `id`, `owner_user_id`, `status`, `started_at`, `created_at`, `updated_at`, `budget_amount NUMERIC(19,2)` nullable y `currency VARCHAR(3) NOT NULL DEFAULT 'ARS'`; `status` es un enum pequeño con `active` y `completed`. Nullable: `store_id` y `finished_at`. Las fechas se almacenan como `timestamp with time zone` en UTC.
 
-`store_id` tiene FK a `stores.id` con `ON DELETE RESTRICT`. La aplicación valida además que el Store pertenezca al mismo `owner_user_id`; no es válido asociar una sesión de A a un Store de B. Un índice único parcial sobre `owner_user_id WHERE status = 'active'` garantiza como máximo una sesión activa por usuario. Una segunda solicitud de inicio devuelve conflicto 409. No existe todavía relación con Product ni ShoppingItem.
+`store_id` tiene FK a `stores.id` con `ON DELETE RESTRICT`. La aplicación valida además que el Store pertenezca al mismo `owner_user_id`; no es válido asociar una sesión de A a un Store de B. Un índice único parcial sobre `owner_user_id WHERE status = 'active'` garantiza como máximo una sesión activa por usuario. Una segunda solicitud de inicio devuelve conflicto 409. F7 agrega la relación opcional con Product mediante `ShoppingItem`, sin alterar el snapshot histórico.
 
 El presupuesto es opcional: campo ausente, `null` o entrada vacía significan “sin presupuesto”. Si se informa, debe ser mayor que cero, admitir como máximo dos decimales y no superar el límite representable razonable (`9999999999999999.99`). La API recibe y devuelve strings decimales canónicos, por ejemplo `"100000.50"`; no acepta separadores de miles, coma decimal, valores negativos, cero, `NaN`, `Infinity` ni más de dos decimales. La UI acepta el mismo formato y presenta con `Intl.NumberFormat('es-AR')`. F6 usa `ARS` sin selector de moneda. Una sesión `completed` conserva su presupuesto y no permite modificarlo.
 
@@ -47,7 +47,9 @@ Para invitados, la sesión se guarda en `localStorage` bajo `smartcart_guest_sho
 
 ### ShoppingItem
 
-Línea de una compra. Obligatorios: `id`, `shopping_session_id`, nombre o referencia de producto, `quantity`, `unit_code`, `unit_price`, `currency_code` y subtotal calculable. Nullable: `product_id`, barcode capturado, marca, notas y posición. Se conserva el nombre/precio de la línea para que el histórico no cambie si luego se edita el producto maestro.
+Línea de una compra. En PostgreSQL F7: `id`, `shopping_session_id`, `product_name`, `quantity NUMERIC(12,3)`, `created_at` y `updated_at`. Nullable: `product_id`, `product_brand`, `product_barcode`, `product_quantity_value NUMERIC(19,4)` y `product_quantity_unit`. Los campos `product_*` son un snapshot del Product al agregarlo; un ítem manual usa `product_id = null` y conserva igualmente los datos ingresados. F7 no tiene `unit_price`, moneda, subtotal ni total.
+
+`product_quantity_value`/`product_quantity_unit` describe la presentación del envase o producto; `quantity` describe cuántas presentaciones se agregaron. Por ejemplo, un Product “Leche 1 L” con `quantity = 3` significa tres envases de 1 L. Una referencia de catálogo repetida dentro de la misma sesión incrementa `quantity` en la fila existente; los manuales no se deduplican automáticamente. La cantidad admite hasta tres decimales, debe ser positiva y se transporta como string decimal.
 
 ### PriceObservation
 
@@ -63,11 +65,11 @@ Producto esperado en una lista. Obligatorios: `id`, `shopping_list_id`, nombre o
 
 ## 3. Relaciones
 
-`User 1—N Store`, `User 1—N Product`, `User 1—N ShoppingSession`, `Store 1—N ShoppingSession`, `ShoppingSession 1—N ShoppingItem`, `User 1—N PriceObservation`, `Store 1—N PriceObservation`, `Product 1—N PriceObservation`, `User 1—N ShoppingList` y `ShoppingList 1—N ShoppingListItem`. `ShoppingItem` y `ShoppingListItem` pueden apuntar a `Product`, pero deben conservar snapshot suficiente cuando el producto sea manual o cambie.
+`User 1—N Store`, `User 1—N Product`, `User 1—N ShoppingSession`, `Store 1—N ShoppingSession`, `ShoppingSession 1—N ShoppingItem`, `Product 1—N ShoppingItem`, `User 1—N PriceObservation`, `Store 1—N PriceObservation`, `Product 1—N PriceObservation`, `User 1—N ShoppingList` y `ShoppingList 1—N ShoppingListItem`. `ShoppingItem` apunta a `Product` opcionalmente, pero conserva snapshot suficiente cuando el producto sea manual o cambie.
 
 ## 4. Integridad y cálculos
 
-`subtotal = quantity × unit_price` se calcula con precisión decimal en servidor y se valida contra entradas. El total de sesión es la suma de subtotales; el presupuesto es opcional y no impide finalizar. No se deben almacenar importes derivados sin una estrategia de recalculación, aunque un total materializado puede optimizar lecturas si se valida transaccionalmente.
+F7 no calcula subtotales ni totales porque todavía no existe precio. La cantidad de ítem se valida con precisión decimal exacta en servidor/local y no se persiste como float. Sesiones completadas e ítems históricos son legibles, pero no mutables ni eliminables.
 
 ## 5. Extensibilidad y privacidad
 

@@ -1,6 +1,6 @@
 import { and, asc, eq, ilike, or } from 'drizzle-orm';
 import { db } from '@/db';
-import { products } from '@/db/schema';
+import { products, shoppingItems } from '@/db/schema';
 import {
   normalizeBarcode,
   normalizeProductPart,
@@ -12,6 +12,7 @@ import {
 
 export class ProductNotFoundError extends Error {}
 export class ProductDuplicateError extends Error {}
+export class ProductReferencedError extends Error {}
 
 function toDbValues(userId: string, input: ProductInput) {
   const parsed = productInputSchema.parse(input);
@@ -43,6 +44,22 @@ function isUniqueViolation(error: unknown): boolean {
       candidate !== null &&
       'code' in candidate &&
       candidate.code === '23505',
+  );
+}
+
+function isForeignKeyViolation(error: unknown): boolean {
+  const candidates = [
+    error,
+    typeof error === 'object' && error !== null && 'cause' in error
+      ? error.cause
+      : null,
+  ];
+  return candidates.some(
+    (candidate) =>
+      typeof candidate === 'object' &&
+      candidate !== null &&
+      'code' in candidate &&
+      candidate.code === '23503',
   );
 }
 
@@ -126,10 +143,23 @@ export async function updateProduct(
 }
 
 export async function deleteProduct(userId: string, productId: string) {
-  const [product] = await db
-    .delete(products)
-    .where(and(eq(products.id, productId), eq(products.ownerUserId, userId)))
-    .returning({ id: products.id });
+  await getProduct(userId, productId);
+  const [reference] = await db
+    .select({ id: shoppingItems.id })
+    .from(shoppingItems)
+    .where(eq(shoppingItems.productId, productId))
+    .limit(1);
+  if (reference) throw new ProductReferencedError();
 
-  if (!product) throw new ProductNotFoundError();
+  try {
+    const [product] = await db
+      .delete(products)
+      .where(and(eq(products.id, productId), eq(products.ownerUserId, userId)))
+      .returning({ id: products.id });
+
+    if (!product) throw new ProductNotFoundError();
+  } catch (error) {
+    if (isForeignKeyViolation(error)) throw new ProductReferencedError();
+    throw error;
+  }
 }

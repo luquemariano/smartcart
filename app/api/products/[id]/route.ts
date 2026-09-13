@@ -6,6 +6,7 @@ import {
   getProduct,
   ProductDuplicateError,
   ProductNotFoundError,
+  ProductReferencedError,
   updateProduct,
 } from '@/server/products';
 
@@ -80,6 +81,12 @@ export async function DELETE(_request: Request, context: RouteContext) {
       return NextResponse.json(
         { error: 'Producto no encontrado.' },
         { status: 404 },
+      );
+    }
+    if (error instanceof ProductReferencedError) {
+      return NextResponse.json(
+        { error: 'No podés eliminar un producto usado en una compra.' },
+        { status: 409 },
       );
     }
     throw error;

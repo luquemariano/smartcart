@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-**F6 — Presupuesto de la sesión (completada).**
+**F7 — Ítems de la sesión (completada).**
 
 ## Qué existe hoy
 
@@ -44,22 +44,26 @@
 - Fechas persistidas como timestamps UTC y formateadas en zona local para la UI.
 - Presupuesto opcional por sesión en `NUMERIC(19,2)`, expuesto como string decimal y con `ARS` por defecto.
 - Inicio, edición, eliminación y conservación del presupuesto al finalizar, tanto en PostgreSQL como en el repositorio guest local.
-- Sesiones finalizadas inmutables respecto del presupuesto; la UI no calcula todavía ítems, subtotales ni total.
+- Sesiones finalizadas inmutables respecto del presupuesto y de sus ítems; la UI no calcula todavía precios, subtotales ni total.
+- Tabla `shopping_items` con snapshot del producto y `quantity NUMERIC(12,3)`, sin precio ni subtotal.
+- Alta desde catálogo o manual, incremento atómico de la misma referencia de catálogo, modificación/eliminación en sesiones activas y listado histórico de ítems.
+- FKs `shopping_session_id` y `product_id` con `ON DELETE RESTRICT`; Product usado no puede eliminarse.
+- Repositorio guest de ítems persistente, aislado por guest ID y sesión, con el mismo ciclo activo/histórico.
 
 ## Qué no existe
 
-- No existen productos dentro de una compra, precios, cantidades compradas, carrito, subtotales, total, historial de precios, sincronización ni migración guest→cuenta.
+- No existen precios, cantidades compradas por peso, subtotales, total, presupuesto restante, historial de precios, sincronización ni migración guest→cuenta.
 - Google OAuth no fue probado con credenciales reales ni configuración externa de Google Cloud.
 - La baja de supermercados es hard delete por ahora; deberá revisarse cuando exista historial.
 - La baja de productos es hard delete por ahora; deberá revisarse cuando exista historial o referencias.
 - Las sesiones no tienen delete; los Stores referenciados no pueden borrarse, aunque todavía no existe soft delete.
-- No se realizaron commits ni push durante F6; el HEAD existente corresponde al cierre de F5.
+- No se realizaron commits ni push durante F7; el HEAD existente corresponde al cierre de F6.
 
 ## Decisiones aprobadas
 
 Producto web responsive mobile-first, con evolución a PWA; invitado sin registro; cuenta opcional con Google y email; Better Auth sobre PostgreSQL; monolito Next.js con TypeScript/App Router/Tailwind; almacenamiento local preparado para IndexedDB; autorización server-side; imágenes efímeras y datos estructurados; sin monetización, scraping, promociones ni IA compleja en MVP. Better Auth usa sus migraciones oficiales; no se incorporó ORM adicional ni se crearon tablas de negocio. F2.2 conserva el guest ID tras autenticación para una futura importación explícita.
 
-El producto inicial es un asistente personal de compra, no un comparador general de supermercados. F3, F4, F5 y F6 mantienen el alcance limitado a contexto de compra, catálogo personal, sesión y presupuesto, sin ítems ni precios.
+El producto inicial es un asistente personal de compra, no un comparador general de supermercados. F3–F7 mantienen el alcance limitado a contexto de compra, catálogo personal, sesión, presupuesto e ítems, sin precios ni cálculos.
 
 ## Riesgos abiertos
 
@@ -68,12 +72,12 @@ El producto inicial es un asistente personal de compra, no un comparador general
 - Decidir proveedor de PostgreSQL y hosting.
 - Diseñar conflictos de migración invitado→cuenta y sincronización multi-dispositivo.
 - Validar qué capacidades PWA/offline son confiables en navegadores móviles objetivo.
-- Definir reglas de precios por peso/volumen cuando llegue F7/F8.
+- Definir reglas de precios por peso/volumen cuando llegue F8.
 - Evaluar el riesgo de dependencias de desarrollo de Drizzle Kit: `npm install` reporta 4 vulnerabilidades moderadas transitivas.
 
 ## Siguiente fase
 
-Puede abordarse **F7 — Captura/lectura de producto**, manteniendo fuera precios, subtotales, total, captura asistida, comparación e historial hasta sus fases correspondientes.
+Puede abordarse **F8 — Captura de precio**, manteniendo fuera OCR, cámara, lector de barcode, subtotales, total, comparación e historial hasta sus fases correspondientes.
 
 ## Instrucción de continuidad
 

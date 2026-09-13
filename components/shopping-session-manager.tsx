@@ -15,6 +15,7 @@ import {
   startShoppingSessionSchema,
 } from '@/lib/shopping-session-validation';
 import { listLocalStores, type LocalStore } from '@/lib/local-store-repository';
+import { ShoppingItemManager } from '@/components/shopping-item-manager';
 
 type SessionView = LocalShoppingSession;
 type StoreView = Pick<LocalStore, 'id' | 'name' | 'branchName'>;
@@ -330,6 +331,12 @@ export function ShoppingSessionManager({
               Finalizar
             </button>
           </div>
+          <ShoppingItemManager
+            guestId={guestId}
+            mode={mode}
+            sessionId={active.id}
+            status={active.status}
+          />
         </div>
       ) : (
         <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -392,6 +399,12 @@ export function ShoppingSessionManager({
                   {session.budgetAmount
                     ? `Presupuesto: ${formatMoney(session.budgetAmount, session.currency)}`
                     : 'Sin presupuesto'}
+                  <ShoppingItemManager
+                    guestId={guestId}
+                    mode={mode}
+                    sessionId={session.id}
+                    status={session.status}
+                  />
                 </li>
               ))}
           </ul>

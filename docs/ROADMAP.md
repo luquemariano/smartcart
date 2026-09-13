@@ -1,6 +1,6 @@
 # SmartCart — Roadmap
 
-Las fases son pequeñas y verificables. F6 es la fase actual completada; ninguna fase posterior se considera implementada por existir en este documento.
+Las fases son pequeñas y verificables. F7 es la fase actual completada; ninguna fase posterior se considera implementada por existir en este documento.
 
 ## F0 — Foundation
 
@@ -76,10 +76,12 @@ Las fases son pequeñas y verificables. F6 es la fase actual completada; ninguna
 
 ## F7 — Captura/lectura de producto
 
+- **Estado:** completada solo para ítems manuales/de catálogo; captura asistida queda fuera.
 - **Objetivo:** acelerar carga opcionalmente.
-- **Entregables:** código de barras y/o captura asistida con alternativa manual.
+- **Entregables F7 implementados:** `ShoppingItem` con snapshot, producto de catálogo o manual, cantidad decimal, incremento de referencias de catálogo, edición/eliminación activa, listado histórico, persistencia guest y protección de Product usado.
+- **Fuera de alcance F7:** precio, subtotal, total, presupuesto restante, OCR, cámara, barcode scanning y `PriceObservation`.
 - **Dependencias:** F4, F6.
-- **Cierre:** falla de cámara/OCR no bloquea la compra y las imágenes no se persisten por defecto.
+- **Cierre:** flujo manual completo validado para cuenta e invitado; los ítems sobreviven la finalización y no se introducen capturas ni imágenes.
 
 ## F8 — Captura de precio
 

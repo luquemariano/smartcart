@@ -1,6 +1,6 @@
 # SmartCart
 
-SmartCart es un asistente personal de compras que busca ayudar a saber cuánto se lleva gastado antes de llegar a la caja. El proyecto se encuentra en **F6 — Presupuesto de la sesión**; todavía no contiene ítems, productos dentro de la compra ni precios.
+SmartCart es un asistente personal de compras que busca ayudar a saber cuánto se lleva gastado antes de llegar a la caja. El proyecto se encuentra en **F7 — Ítems de la sesión**; todavía no contiene precios, subtotales ni totales.
 
 ## Requisitos
 
@@ -17,7 +17,7 @@ npm run dev
 
 Copiar `.env.example` a `.env.local` si se va a usar PostgreSQL local y generar un secret con `openssl rand -base64 32`. Abrir `http://localhost:3000`. La ruta técnica `http://localhost:3000/api/health` debe devolver `{"status":"ok"}`.
 
-La pantalla permite continuar con Google cuando ambas credenciales existen, entrar/registrarse con email o usar un invitado local. Luego permite administrar supermercados, un catálogo personal de productos y una sesión de compra: las cuentas usan PostgreSQL mediante `/api/stores`, `/api/products` y `/api/shopping-sessions`; los invitados usan `localStorage` versionado aislado por guest ID. Sin `BETTER_AUTH_SECRET`, el desarrollo usa un valor explícitamente no productivo; producción falla al iniciar para evitar una configuración insegura.
+La pantalla permite continuar con Google cuando ambas credenciales existen, entrar/registrarse con email o usar un invitado local. Luego permite administrar supermercados, un catálogo personal de productos y una sesión de compra con ítems: las cuentas usan PostgreSQL mediante `/api/stores`, `/api/products` y `/api/shopping-sessions`; los invitados usan `localStorage` versionado aislado por guest ID. Sin `BETTER_AUTH_SECRET`, el desarrollo usa un valor explícitamente no productivo; producción falla al iniciar para evitar una configuración insegura.
 
 ## Ejecución con Docker
 
@@ -44,7 +44,7 @@ npm run db:generate
 npm run db:migrate
 ```
 
-Los tests cubren identidad local, estados de acceso, formulario email, supermercados, productos guest, validación, barcode, conversiones exactas, dinero decimal, sesiones guest con presupuesto y UI de listado/alta/búsqueda/selección/inicio/edición/finalización. El CRUD autenticado, búsqueda, sesiones, presupuesto, aislamiento entre usuarios y protección de Store referenciado se verifican contra PostgreSQL en Docker. No se intenta probar OAuth real.
+Los tests cubren identidad local, estados de acceso, formulario email, supermercados, productos guest, validación, barcode, conversiones exactas, dinero decimal, sesiones guest con presupuesto, ítems guest y UI de listado/alta/búsqueda/selección/inicio/ítems/edición/finalización. El CRUD autenticado, búsqueda, sesiones, presupuesto, ítems, snapshots, deduplicación, aislamiento entre usuarios y protección de Store/Product referenciados se verifican contra PostgreSQL en Docker. No se intenta probar OAuth real.
 
 Para crear y aplicar migraciones del dominio: `npm run db:generate` y `npm run db:migrate`. En Docker, ejecutar `docker compose --profile tools run --rm domain-migrate`; PostgreSQL permanece en la red interna y no expone un puerto al host.
 
