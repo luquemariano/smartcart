@@ -1,6 +1,6 @@
 import { and, asc, eq } from 'drizzle-orm';
 import { db } from '@/db';
-import { stores } from '@/db/schema';
+import { priceObservations, stores } from '@/db/schema';
 import {
   normalizeStorePart,
   storeInputSchema,
@@ -115,6 +115,12 @@ export async function updateStore(
 
 export async function deleteStore(userId: string, storeId: string) {
   try {
+    const [priceReference] = await db
+      .select({ id: priceObservations.id })
+      .from(priceObservations)
+      .where(eq(priceObservations.storeId, storeId))
+      .limit(1);
+    if (priceReference) throw new StoreReferencedError();
     const [store] = await db
       .delete(stores)
       .where(and(eq(stores.id, storeId), eq(stores.ownerUserId, userId)))

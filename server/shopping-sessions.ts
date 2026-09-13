@@ -1,6 +1,7 @@
 import { and, desc, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { shoppingSessions } from '@/db/schema';
+import { createPriceObservationsForSession } from '@/server/price-observations';
 import { getStore } from '@/server/stores';
 import { DEFAULT_CURRENCY, serializeMoney } from '@/lib/money';
 import {
@@ -111,22 +112,41 @@ export async function getShoppingSession(userId: string, sessionId: string) {
 }
 
 export async function finishShoppingSession(userId: string, sessionId: string) {
-  const existing = await getShoppingSession(userId, sessionId);
-  if (existing.status === 'completed') return existing;
+  return db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select()
+      .from(shoppingSessions)
+      .where(
+        and(
+          eq(shoppingSessions.id, sessionId),
+          eq(shoppingSessions.ownerUserId, userId),
+        ),
+      )
+      .limit(1);
+    if (!existing) throw new ShoppingSessionNotFoundError();
+    if (existing.status === 'completed') return existing;
 
-  const now = new Date();
-  const [session] = await db
-    .update(shoppingSessions)
-    .set({ status: 'completed', finishedAt: now, updatedAt: now })
-    .where(
-      and(
-        eq(shoppingSessions.id, sessionId),
-        eq(shoppingSessions.ownerUserId, userId),
-        eq(shoppingSessions.status, 'active'),
-      ),
-    )
-    .returning();
-  return session ?? getShoppingSession(userId, sessionId);
+    const now = new Date();
+    const [session] = await tx
+      .update(shoppingSessions)
+      .set({ status: 'completed', finishedAt: now, updatedAt: now })
+      .where(
+        and(
+          eq(shoppingSessions.id, sessionId),
+          eq(shoppingSessions.ownerUserId, userId),
+          eq(shoppingSessions.status, 'active'),
+        ),
+      )
+      .returning();
+    if (!session) throw new ShoppingSessionNotFoundError();
+    await createPriceObservationsForSession(
+      tx as unknown as typeof db,
+      userId,
+      sessionId,
+      session.finishedAt ?? now,
+    );
+    return session;
+  });
 }
 
 export async function updateShoppingSessionBudget(

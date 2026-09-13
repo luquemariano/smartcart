@@ -308,6 +308,13 @@
 - **Consecuencias:** el resultado siempre requiere confirmación explícita de cantidad y precio; un producto desconocido se crea antes del ShoppingItem. Sin sesión activa no se inicia ninguna compra automáticamente.
 - **Estado:** aprobada para F13.
 
+## ADR-046 — Observación de precio al finalizar compra
+
+- **Decisión:** crear `PriceObservation` solo al pasar una sesión a `completed`, con Product, Store, precio unitario y moneda válidos. La operación es transaccional y `shopping_item_id` es único de forma parcial.
+- **Motivo:** registrar el precio final conocido sin contaminar el historial con líneas manuales, sesiones sin tienda o precios pendientes.
+- **Consecuencias:** Product y Store quedan protegidos por FK `RESTRICT`; las referencias a sesión e ítem usan `SET NULL`. El guest genera el mismo dato localmente y F12 lo reconstruye al importar, sin aceptar observaciones arbitrarias del cliente.
+- **Estado:** aprobada para F14.
+
 ## ADR-043 — Compatibilidad estricta de precio por producto
 
 - **Decisión:** comparar precios de un mismo `product_id` solo si coinciden exactamente la presentación y la moneda; cantidades faltantes, precios faltantes y bases cero no generan porcentajes inventados.

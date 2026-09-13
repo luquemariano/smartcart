@@ -57,6 +57,13 @@
       "when": 1789330000000,
       "tag": "0007_add-guest-imports",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789340000000,
+      "tag": "0008_add-price-observations",
+      "breakpoints": true
     }
   ]
 }

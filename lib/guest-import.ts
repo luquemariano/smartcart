@@ -10,6 +10,7 @@ import { clearGuestShoppingSessionsAfterImport } from '@/lib/local-shopping-sess
 import { clearGuestShoppingItemsAfterImport } from '@/lib/local-shopping-item-repository';
 import { clearGuestShoppingListsAfterImport } from '@/lib/local-shopping-list-repository';
 import { clearGuestIdentityAfterImport } from '@/lib/guest-identity';
+import { clearGuestPriceObservationsAfterImport } from '@/lib/local-price-observation-repository';
 
 export function buildGuestImportSnapshot(guestId: string) {
   const allItems = getPendingGuestShoppingItems(guestId);
@@ -60,6 +61,7 @@ export async function importGuestData() {
     clearGuestShoppingSessionsAfterImport(snapshot.guestId);
     clearGuestShoppingItemsAfterImport(snapshot.guestId);
     clearGuestShoppingListsAfterImport(snapshot.guestId);
+    clearGuestPriceObservationsAfterImport(snapshot.guestId);
     clearGuestIdentityAfterImport();
   }
   return { ...result, responseOk: response.ok, snapshot };

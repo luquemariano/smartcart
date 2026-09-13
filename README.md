@@ -21,6 +21,8 @@ La pantalla permite continuar con Google cuando ambas credenciales existen, entr
 
 Durante una compra activa se puede agregar un producto por código de barras. Se prefiere `BarcodeDetector` nativo y la cámara trasera (`facingMode: environment`); si no están disponibles, se ingresa el código manualmente. El código se conserva como string de 8 a 14 dígitos, incluyendo ceros iniciales. No se suben ni persisten imágenes. Un producto desconocido requiere nombre y precio explícitos antes de crearse y agregarse a la compra.
 
+Al finalizar una compra con Store, los ítems de catálogo que tienen precio generan `PriceObservation`, el historial normalizado Product + Store + fecha. Los ítems manuales, compras sin Store y precios faltantes se omiten. El backfill histórico es explícito y reejecutable con `npm run db:backfill-price-observations` después de aplicar la migración de dominio.
+
 ## Ejecución con Docker
 
 ```bash

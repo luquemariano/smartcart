@@ -18,6 +18,7 @@ import {
 } from '@/lib/product-validation';
 import { normalizeStorePart, storeInputSchema } from '@/lib/store-validation';
 import { guestImportSnapshotSchema } from '@/lib/guest-import-validation';
+import { createPriceObservationsForSession } from '@/server/price-observations';
 
 export class GuestImportAlreadyCompletedError extends Error {}
 export class GuestImportActiveSessionConflictError extends Error {}
@@ -252,6 +253,20 @@ export async function importGuestSnapshot(
           });
           itemsImported++;
         }
+      for (const source of snapshot.sessions) {
+        const importedSessionId = sessionMap.get(source.id);
+        if (
+          source.status === 'completed' &&
+          importedSessionId &&
+          source.finishedAt
+        )
+          await createPriceObservationsForSession(
+            tx as unknown as typeof db,
+            userId,
+            importedSessionId,
+            date(source.finishedAt),
+          );
+      }
       for (const source of snapshot.lists) {
         const id = crypto.randomUUID();
         await tx.insert(shoppingLists).values({

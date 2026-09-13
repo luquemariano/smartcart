@@ -156,3 +156,7 @@ Plantillas de compra con productos de catálogo o manuales, snapshots, cantidade
 ### F12 — Importación guest → cuenta (implementada)
 
 Importación explícita y transaccional de Stores, Products, compras, ítems y listas. Incluye trazabilidad idempotente, resolución segura de duplicados, snapshot serializado desde el cliente, limpieza local posterior al éxito y preservación ante error o conflicto de sesión activa.
+
+### F14 — PriceObservation (en implementación)
+
+Historial normalizado de precios de Products por Store y fecha, generado al finalizar compras con precio y Store válidos. Incluye consulta por Product, latest price por Store, backfill explícito e idempotente, soporte guest y reconstrucción durante F12. La comparación completa de listas por supermercado pertenece a F15.

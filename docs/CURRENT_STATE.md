@@ -95,3 +95,5 @@ F11 — Listas de compras reutilizables: CRUD, snapshots, checked/reset, duplica
 F12 — Importación guest → cuenta: implementada y validada contra PostgreSQL con migración 0007 aplicada, importación explícita, idempotencia, rollback y conflicto de sesión activa.
 
 F13 — Barcode durante compra activa: implementada. Usa `BarcodeDetector` nativo cuando existe, cámara trasera en memoria y entrada manual como fallback; agrega Products conocidos o permite alta rápida de Products desconocidos con precio explícito, tanto para cuenta como guest. No incorpora migración ni almacenamiento de imágenes. La prueba física de cámara queda pendiente de un dispositivo/navegador compatible.
+
+F14 — PriceObservation: código de dominio, migración `0008`, backfill explícito, historial autenticado y soporte guest preparados. La aplicación de `0008` y la ejecución del backfill sobre el volumen Docker quedan pendientes de autorización operativa del entorno.

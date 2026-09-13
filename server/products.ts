@@ -1,6 +1,11 @@
 import { and, asc, eq, ilike, or } from 'drizzle-orm';
 import { db } from '@/db';
-import { products, shoppingItems, shoppingListItems } from '@/db/schema';
+import {
+  priceObservations,
+  products,
+  shoppingItems,
+  shoppingListItems,
+} from '@/db/schema';
 import {
   normalizeBarcode,
   normalizeProductPart,
@@ -156,6 +161,12 @@ export async function deleteProduct(userId: string, productId: string) {
     .where(eq(shoppingListItems.productId, productId))
     .limit(1);
   if (listReference) throw new ProductReferencedError();
+  const [priceReference] = await db
+    .select({ id: priceObservations.id })
+    .from(priceObservations)
+    .where(eq(priceObservations.productId, productId))
+    .limit(1);
+  if (priceReference) throw new ProductReferencedError();
 
   try {
     const [product] = await db

@@ -86,3 +86,9 @@ F10 no agrega tablas ni columnas. Las comparaciones se derivan en runtime: una c
 ## 5. Extensibilidad y privacidad
 
 Se evita acoplar el modelo a una moneda única, una cadena comercial o una fuente externa. La autorización se aplica por `owner_user_id` server-side. Ubicación, marca, categoría y fuentes externas son opcionales. Las imágenes quedan fuera del modelo persistente por defecto.
+
+## PriceObservation (F14)
+
+`PriceObservation` es el historial normalizado de un precio conocido para un `Product` real en un `Store` real y en una fecha concreta. Se crea al finalizar una `ShoppingSession`, únicamente cuando la sesión tiene Store, el ShoppingItem tiene `productId` y `unitPrice`, y la moneda es ARS. `ShoppingItem` conserva el precio y snapshot de la línea comprada; `PriceObservation` agrega la consulta histórica por Product + Store sin reemplazar F10.
+
+La tabla `price_observations` usa `NUMERIC(19,2)`, FK restrictivas para Product y Store, FK `SET NULL` para sesión e ítem históricos, índices por Product/Store/fecha y un índice unique parcial por `shopping_item_id` para idempotencia. El backfill explícito se ejecuta con `npm run db:backfill-price-observations` y es reejecutable.

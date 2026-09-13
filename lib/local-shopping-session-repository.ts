@@ -1,4 +1,5 @@
 import { serializeMoney } from '@/lib/money';
+import { createLocalPriceObservationsForSession } from '@/lib/local-price-observation-repository';
 
 export type LocalShoppingSessionStatus = 'active' | 'completed';
 
@@ -120,6 +121,7 @@ export function finishLocalShoppingSession(
     guestId,
     sessions.map((session) => (session.id === sessionId ? finished : session)),
   );
+  createLocalPriceObservationsForSession(guestId, finished);
   return finished;
 }
 
