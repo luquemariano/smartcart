@@ -1,6 +1,6 @@
 # SmartCart — Roadmap
 
-Las fases son pequeñas y verificables. F10 es la fase actual completada; ninguna fase posterior se considera implementada por existir en este documento.
+Las fases son pequeñas y verificables. F14 es la última fase completada; F15 es la siguiente fase y todavía no fue iniciada.
 
 ## F0 — Foundation
 
@@ -135,19 +135,41 @@ Las fases son pequeñas y verificables. F10 es la fase actual completada; ningun
 - **Dependencias:** F8–F13.
 - **Cierre:** migración 0008 aplicada, PostgreSQL real validado, ownership y delete protection confirmados, retry/backfill sin duplicados y tests completos.
 
-## F15 — QA, mobile y PWA
+## F15 — Comparación de listas entre supermercados
 
-- **Objetivo:** preparar una experiencia confiable en teléfonos.
-- **Entregables:** pruebas de flujos críticos, accesibilidad básica, responsive QA, manifest, instalación y rendimiento.
-- **Dependencias:** F6, F12, F13.
-- **Cierre:** criterios de aceptación móviles y PWA documentados y verificados.
+- **Estado:** siguiente fase; no iniciada.
+- **Objetivo:** usar `PriceObservation` para estimar cuánto costaría una `ShoppingList` en distintos `Store` según precios conocidos.
+- **Entregables:** estimación por lista y Store, cobertura explícita de precios faltantes y consultas históricas acotadas.
+- **Dependencias:** F11 y F14.
+- **Cierre:** comparación transparente, sin inventar precios y sin incluir promociones o costos externos.
 
-## F16 — Producción
+## F16 — Promociones / costo real opcional
 
-- **Objetivo:** desplegar MVP con operación segura.
-- **Entregables:** Docker/hosting, migraciones, backups, observabilidad, políticas de secretos y runbook.
+- **Objetivo:** dejar espacio para promociones, tarjetas, distancia, combustible/taxi u otros costos, sin implementarlos todavía.
+- **Entregables:** definición futura de fuentes y reglas opcionales de costo real.
 - **Dependencias:** F15.
-- **Cierre:** despliegue repetible, rollback conocido y controles de seguridad revisados.
+- **Cierre:** alcance explícito y separado del precio histórico normalizado.
+
+## F17 — Offline/PWA robusta
+
+- **Objetivo:** soportar IndexedDB, cola local, sincronización y resolución de conflictos.
+- **Entregables:** persistencia offline, reintentos, sincronización y conflictos explícitos.
+- **Dependencias:** F14.
+- **Cierre:** una compra puede continuar offline sin duplicación silenciosa.
+
+## F18 — QA funcional / producción
+
+- **Objetivo:** seguridad, performance, accesibilidad funcional, mobile real y producción.
+- **Entregables:** validación funcional, hardening, observabilidad, despliegue y runbook.
+- **Dependencias:** F15–F17.
+- **Cierre:** operación segura y criterios de calidad verificados.
+
+## F19 — UX/UI final
+
+- **Objetivo:** diseño visual, dashboard desktop, mobile purchase mode, navegación, responsive y polishing final.
+- **Entregables:** experiencia visual final y pulido transversal.
+- **Dependencias:** F15–F18.
+- **Cierre:** UX/UI final validada en desktop y mobile.
 
 ### F11 — Listas reutilizables (implementada)
 

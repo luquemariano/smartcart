@@ -59,7 +59,7 @@ No se almacenan fotografías permanentemente. Una futura captura seguirá `captu
 
 ## 8. Despliegue
 
-Docker encapsulará la aplicación Next.js y, para desarrollo local, PostgreSQL. Producción deberá separar aplicación y base administrada o servicio equivalente cuando sea conveniente, con migraciones controladas, backups, logs sin datos sensibles y variables de entorno. La topología exacta se decidirá en F1/F15.
+Docker encapsulará la aplicación Next.js y, para desarrollo local, PostgreSQL. Producción deberá separar aplicación y base administrada o servicio equivalente cuando sea conveniente, con migraciones controladas, backups, logs sin datos sensibles y variables de entorno. La topología exacta se decidirá en F1/F18.
 
 ## 9. Escalabilidad deliberada
 

@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-**F14 — PriceObservation (completada y cerrada).** HEAD: `e903fa7` (`feat: add F14 price observations`). F15 todavía no fue iniciada.
+**F14 — PriceObservation (completada y cerrada).** HEAD: `7ac479f` (`docs: close F14 price observations`). F15 todavía no fue iniciada.
 
 ## Qué existe hoy
 
@@ -84,7 +84,7 @@ El producto inicial es un asistente personal de compra, no un comparador general
 
 ## Siguiente fase
 
-La siguiente fase es **F15 — QA, mobile y PWA**. F15 todavía no fue iniciada.
+La siguiente fase es **F15 — Comparación de listas entre supermercados**. F15 todavía no fue iniciada.
 
 ## Instrucción de continuidad
 
