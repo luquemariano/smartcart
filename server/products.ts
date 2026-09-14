@@ -69,9 +69,13 @@ function isForeignKeyViolation(error: unknown): boolean {
   );
 }
 
-export async function createProduct(userId: string, input: ProductInput) {
+export async function createProduct(
+  userId: string,
+  input: ProductInput,
+  executor: typeof db = db,
+) {
   try {
-    const [product] = await db
+    const [product] = await executor
       .insert(products)
       .values(toDbValues(userId, input))
       .returning();
@@ -80,6 +84,25 @@ export async function createProduct(userId: string, input: ProductInput) {
     if (isUniqueViolation(error)) throw new ProductDuplicateError();
     throw error;
   }
+}
+
+export async function findProductForInput(
+  userId: string,
+  input: ProductInput,
+  executor: typeof db = db,
+) {
+  const parsed = productInputSchema.parse(input);
+  const [product] = await executor
+    .select()
+    .from(products)
+    .where(
+      and(
+        eq(products.ownerUserId, userId),
+        eq(products.duplicateKey, productDuplicateKey(parsed)),
+      ),
+    )
+    .limit(1);
+  return product ?? null;
 }
 
 export async function listProducts(userId: string, query?: string) {

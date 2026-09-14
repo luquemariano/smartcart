@@ -22,6 +22,11 @@ import { listLocalStores, type LocalStore } from '@/lib/local-store-repository';
 import { ShoppingItemManager } from '@/components/shopping-item-manager';
 import { ShoppingHistoryManager } from '@/components/shopping-history-manager';
 import { BarcodeProductAdder } from '@/components/barcode-product-adder';
+import { OfflineStatus } from '@/components/offline-status';
+import { enqueueOfflineOperation } from '@/lib/offline-db';
+import { makeOfflineOperation } from '@/lib/offline-sync';
+import { useOnlineStatus } from '@/lib/online-status';
+import { putOffline, listOffline } from '@/lib/offline-db';
 
 type SessionView = LocalShoppingSession;
 type StoreView = Pick<LocalStore, 'id' | 'name' | 'branchName'>;
@@ -42,10 +47,13 @@ function storeLabel(store: StoreView | undefined) {
 export function ShoppingSessionManager({
   mode,
   guestId,
+  ownerUserId,
 }: {
   mode: Mode;
   guestId?: string | null;
+  ownerUserId?: string;
 }) {
+  const online = useOnlineStatus();
   const [stores, setStores] = useState<StoreView[]>([]);
   const [active, setActive] = useState<SessionView | null>(null);
   const [activeSummary, setActiveSummary] = useState<ShoppingSummary | null>(
@@ -95,6 +103,20 @@ export function ShoppingSessionManager({
           : null;
         setStores(storesResponse.ok ? (storesData?.stores ?? []) : []);
         setActive(nextActive);
+        if (nextActive && ownerUserId)
+          await putOffline('offline_sessions', {
+            id: nextActive.id,
+            ownerUserId,
+            ...nextActive,
+            summary: activeData?.summary ?? null,
+          });
+        if (ownerUserId && storesResponse.ok) {
+          await Promise.all(
+            (storesData?.stores ?? []).map((store: StoreView) =>
+              putOffline('offline_stores', { ...store, ownerUserId }),
+            ),
+          );
+        }
         setActiveSummary(
           activeResponse.ok ? (activeData?.summary ?? null) : null,
         );
@@ -103,14 +125,35 @@ export function ShoppingSessionManager({
           setMessage('No pudimos cargar tus compras.');
         }
       } catch {
-        setStores([]);
-        setActive(null);
-        setActiveSummary(null);
-        setMessage('No pudimos cargar tus compras.');
+        if (ownerUserId) {
+          const cachedStores = await listOffline<
+            StoreView & { ownerUserId: string }
+          >('offline_stores', (value) => value.ownerUserId === ownerUserId);
+          setStores(cachedStores);
+          const snapshots = await listOffline<
+            SessionView & {
+              ownerUserId: string;
+              summary?: ShoppingSummary | null;
+            }
+          >('offline_sessions', (value) => value.ownerUserId === ownerUserId);
+          const snapshot = snapshots[0];
+          setActive(snapshot ?? null);
+          setActiveSummary(snapshot?.summary ?? null);
+          setMessage(
+            snapshot
+              ? 'Sin conexión: continuamos con la última compra guardada.'
+              : 'No pudimos cargar tus compras.',
+          );
+        } else {
+          setStores([]);
+          setActive(null);
+          setActiveSummary(null);
+          setMessage('No pudimos cargar tus compras.');
+        }
       }
     }
     setLoading(false);
-  }, [guestId, mode]);
+  }, [guestId, mode, ownerUserId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -181,6 +224,18 @@ export function ShoppingSessionManager({
           active.id,
           parsed.data.budgetAmount,
         );
+      } else if (!online && ownerUserId) {
+        await enqueueOfflineOperation(
+          makeOfflineOperation(
+            ownerUserId,
+            'shopping_session_finish',
+            { sessionId: active.id },
+            { serverEntityId: active.id },
+          ),
+        );
+        setMessage('La compra se finalizará cuando vuelva la conexión.');
+        setBusy(false);
+        return;
       } else {
         const response = await fetch(`/api/shopping-sessions/${active.id}`, {
           method: 'PATCH',
@@ -269,6 +324,9 @@ export function ShoppingSessionManager({
           ? 'Esta compra queda guardada en este dispositivo.'
           : 'Una sola compra activa por vez.'}
       </p>
+      {mode === 'authenticated' && ownerUserId && (
+        <OfflineStatus ownerUserId={ownerUserId} />
+      )}
       {loading ? (
         <p className="mt-5 text-sm text-slate-500">Cargando compra…</p>
       ) : active ? (
@@ -443,6 +501,7 @@ export function ShoppingSessionManager({
           </div>
           <ShoppingItemManager
             guestId={guestId}
+            ownerUserId={ownerUserId}
             mode={mode}
             sessionId={active.id}
             status={active.status}
@@ -451,6 +510,7 @@ export function ShoppingSessionManager({
           <BarcodeProductAdder
             guestId={guestId}
             mode={mode}
+            ownerUserId={ownerUserId}
             sessionId={active.id}
           />
         </div>

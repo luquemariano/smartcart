@@ -1,6 +1,6 @@
 # SmartCart — Roadmap
 
-Las fases son pequeñas y verificables. F16 es la última fase completada; F17 es la siguiente fase y todavía no fue iniciada.
+Las fases son pequeñas y verificables. F16 es la última fase cerrada; F17 está técnicamente validada y espera la prueba manual offline del usuario.
 
 ## F0 — Foundation
 
@@ -191,3 +191,7 @@ Historial normalizado de precios de Products por Store y fecha, generado al fina
 ### F15 — Comparación de listas entre supermercados (completada)
 
 Compara una ShoppingList entre Stores propios usando únicamente PriceObservation conocidas y latest por Product+Store. Mantiene dinero exacto, cantidades decimales, cobertura y faltantes explícitos; los ítems manuales quedan fuera del total. El ganador requiere al menos dos Stores completos, y guest reutiliza el mismo calculador.
+
+### F17 — Offline/PWA
+
+Compra autenticada offline con IndexedDB, cola idempotente, reconciliación al volver online y Service Worker mínimo. Guest conserva su flujo local. El cierre requiere validación PostgreSQL real y prueba manual offline.

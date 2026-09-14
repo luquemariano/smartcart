@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { authClient } from '@/lib/auth-client';
 import {
   clearGuestIdentityAfterImport,
@@ -12,15 +12,40 @@ import { ShoppingSessionManager } from '@/components/shopping-session-manager';
 import { ShoppingListManager } from '@/components/shopping-list-manager';
 import { GuestImportPrompt } from '@/components/guest-import-prompt';
 import { PromotionManager } from '@/components/promotion-manager';
+import { OfflineStatus } from '@/components/offline-status';
+import {
+  getKnownOfflineAuthSnapshot,
+  invalidateOfflineAuthSnapshot,
+  isNetworkAuthFailure,
+  saveOfflineAuthSnapshot,
+  type OfflineAuthSnapshot,
+} from '@/lib/offline-auth';
+import { useOnlineStatus } from '@/lib/online-status';
 
 type EmailMode = 'signin' | 'signup';
+type AuthBootstrapState =
+  | 'checking_remote_session'
+  | 'authenticated_online'
+  | 'authenticated_offline'
+  | 'unauthenticated'
+  | 'auth_error';
 
 export function AccessPanel({
   googleConfigured,
 }: {
   googleConfigured: boolean;
 }) {
-  const { data: session, isPending } = authClient.useSession();
+  const {
+    data: session,
+    error: authError,
+    isPending,
+  } = authClient.useSession();
+  const online = useOnlineStatus();
+  const [authState, setAuthState] = useState<AuthBootstrapState>(
+    'checking_remote_session',
+  );
+  const [offlineSnapshot, setOfflineSnapshot] =
+    useState<OfflineAuthSnapshot | null>(null);
   const [guest, setGuest] = useState(false);
   const [guestId, setGuestId] = useState<string | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
@@ -31,6 +56,68 @@ export function AccessPanel({
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function bootstrapKnownSession() {
+      if (session?.user?.id) {
+        await saveOfflineAuthSnapshot(session.user);
+        if (!cancelled) {
+          setOfflineSnapshot(null);
+          setAuthState('authenticated_online');
+        }
+        return;
+      }
+      const networkFailure = !online || isNetworkAuthFailure(authError);
+      if (networkFailure) {
+        const snapshot = await getKnownOfflineAuthSnapshot();
+        if (!cancelled) {
+          setOfflineSnapshot(snapshot);
+          setAuthState(snapshot ? 'authenticated_offline' : 'unauthenticated');
+        }
+        return;
+      }
+      if (isPending) return;
+      if (authError?.status === 401 || authError?.status === 403) {
+        const snapshot = await getKnownOfflineAuthSnapshot();
+        if (snapshot) await invalidateOfflineAuthSnapshot(snapshot.ownerUserId);
+      }
+      if (!cancelled) {
+        setOfflineSnapshot(null);
+        setAuthState(authError ? 'auth_error' : 'unauthenticated');
+      }
+    }
+    void bootstrapKnownSession();
+    return () => {
+      cancelled = true;
+    };
+  }, [authError, isPending, online, session]);
+
+  const knownOfflineUser =
+    authState === 'authenticated_offline' && offlineSnapshot
+      ? {
+          id: offlineSnapshot.ownerUserId,
+          name: offlineSnapshot.displayName,
+          email: offlineSnapshot.email ?? '',
+          image: null,
+        }
+      : null;
+  const effectiveUser = session?.user ?? knownOfflineUser;
+
+  async function handleLogout() {
+    const ownerUserId = effectiveUser?.id;
+    if (!online) {
+      if (ownerUserId) await invalidateOfflineAuthSnapshot(ownerUserId);
+      setOfflineSnapshot(null);
+      return;
+    }
+    try {
+      await authClient.signOut();
+    } finally {
+      if (ownerUserId) await invalidateOfflineAuthSnapshot(ownerUserId);
+      setOfflineSnapshot(null);
+    }
+  }
 
   function friendlyAuthError(
     error: { code?: string; message?: string } | null,
@@ -88,44 +175,48 @@ export function AccessPanel({
     }
   }
 
-  if (isPending)
+  if (authState === 'checking_remote_session' && !knownOfflineUser)
     return <p className="text-sm text-slate-600">Cargando acceso…</p>;
 
-  if (session?.user) {
+  if (effectiveUser) {
     return (
       <div className="space-y-4" data-testid="authenticated-state">
         <div>
           <p className="text-sm font-semibold text-emerald-700">
-            Estado autenticado
+            {knownOfflineUser ? 'Sesión offline' : 'Estado autenticado'}
           </p>
           <div className="mt-2 flex items-center gap-3">
-            {session.user.image && (
+            {effectiveUser.image && (
               <span
                 aria-label="Avatar"
                 className="h-10 w-10 rounded-full bg-cover bg-center"
                 role="img"
-                style={{ backgroundImage: `url(${session.user.image})` }}
+                style={{ backgroundImage: `url(${effectiveUser.image})` }}
               />
             )}
             <div>
               <p className="text-slate-700">
-                {session.user.name || 'Sin nombre'}
+                {effectiveUser.name || 'Sin nombre'}
               </p>
-              <p className="text-sm text-slate-500">{session.user.email}</p>
+              <p className="text-sm text-slate-500">{effectiveUser.email}</p>
             </div>
           </div>
         </div>
         <button
           className="min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          onClick={() => authClient.signOut()}
+          onClick={() => void handleLogout()}
           type="button"
         >
           Cerrar sesión
         </button>
         <GuestImportPrompt />
+        <OfflineStatus ownerUserId={effectiveUser.id} />
         <StoreManager mode="authenticated" />
         <ProductManager mode="authenticated" />
-        <ShoppingSessionManager mode="authenticated" />
+        <ShoppingSessionManager
+          mode="authenticated"
+          ownerUserId={effectiveUser.id}
+        />
         <ShoppingListManager mode="authenticated" />
         <PromotionManager mode="authenticated" />
       </div>

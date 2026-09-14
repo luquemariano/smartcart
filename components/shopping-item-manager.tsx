@@ -24,6 +24,15 @@ import {
   shoppingItemInputSchema,
   shoppingItemPatchSchema,
 } from '@/lib/shopping-item-validation';
+import { productInputSchema } from '@/lib/product-validation';
+import {
+  listOffline,
+  putOffline,
+  deleteOffline,
+  enqueueOfflineOperation,
+} from '@/lib/offline-db';
+import { makeOfflineOperation } from '@/lib/offline-sync';
+import { useOnlineStatus } from '@/lib/online-status';
 
 type Mode = 'guest' | 'authenticated';
 type SessionStatus = 'active' | 'completed';
@@ -78,16 +87,19 @@ function pendingPrice(item: ItemView) {
 export function ShoppingItemManager({
   mode,
   guestId,
+  ownerUserId,
   sessionId,
   status,
   onSummaryChange,
 }: {
   mode: Mode;
   guestId?: string | null;
+  ownerUserId?: string;
   sessionId: string;
   status: SessionStatus;
   onSummaryChange?: (summary: ShoppingSummary) => void;
 }) {
+  const online = useOnlineStatus();
   const readOnly = status === 'completed';
   const [products, setProducts] = useState<ProductView[]>([]);
   const [items, setItems] = useState<ItemView[]>([]);
@@ -141,16 +153,54 @@ export function ShoppingItemManager({
         if (!productsResponse.ok || !itemsResponse.ok)
           throw new Error('No pudimos cargar los ítems.');
         setProducts(productsData.products ?? []);
+        if (mode === 'authenticated' && ownerUserId)
+          for (const product of productsData.products ?? [])
+            await putOffline('offline_products', {
+              ...product,
+              id: product.id,
+              ownerUserId,
+            });
         setItems(itemsData.items ?? []);
+        if (mode === 'authenticated' && ownerUserId)
+          for (const item of itemsData.items ?? [])
+            await putOffline('offline_items', {
+              ...item,
+              id: item.id,
+              ownerUserId,
+              sessionId,
+            });
         if (itemsData.summary) publishSummary(itemsData.summary);
       } catch {
-        setProducts([]);
-        setItems([]);
+        if (mode === 'authenticated' && ownerUserId) {
+          setProducts(
+            await listOffline<ProductView & { ownerUserId: string }>(
+              'offline_products',
+              (value) => value.ownerUserId === ownerUserId,
+            ),
+          );
+          setItems(
+            await listOffline<
+              ItemView & { ownerUserId: string; sessionId: string }
+            >(
+              'offline_items',
+              (value) =>
+                value.ownerUserId === ownerUserId &&
+                value.sessionId === sessionId,
+            ),
+          );
+        } else {
+          setProducts([]);
+          setItems([]);
+        }
         setSummary(null);
-        setMessage('No pudimos cargar los ítems.');
+        setMessage(
+          online
+            ? 'No pudimos cargar los ítems.'
+            : 'Sin conexión: mostramos la última compra guardada.',
+        );
       }
     }
-  }, [guestId, mode, publishSummary, sessionId]);
+  }, [guestId, mode, online, ownerUserId, publishSummary, sessionId]);
 
   useEffect(() => {
     void load();
@@ -164,6 +214,73 @@ export function ShoppingItemManager({
     }
     setBusy(true);
     setMessage('');
+    const queueAuthenticatedItem = async () => {
+      if (!ownerUserId) throw new Error('No hay una cuenta autenticada.');
+      const id = crypto.randomUUID();
+      let itemInput = parsed.data;
+      let localProduct = product;
+      if (parsed.data.productId === null) {
+        const productInput = productInputSchema.parse({
+          name: parsed.data.productName,
+          brand: parsed.data.brand,
+          barcode: parsed.data.barcode,
+          quantityValue: parsed.data.quantityValue,
+          quantityUnit: parsed.data.quantityUnit,
+        });
+        const localProductId = crypto.randomUUID();
+        localProduct = { ...productInput, id: localProductId };
+        await putOffline('offline_products', {
+          id: localProductId,
+          ownerUserId,
+          ...productInput,
+        });
+        await enqueueOfflineOperation(
+          makeOfflineOperation(ownerUserId, 'product_create', productInput, {
+            localEntityId: localProductId,
+          }),
+        );
+        itemInput = {
+          productId: localProductId,
+          quantity: parsed.data.quantity,
+          unitPrice: parsed.data.unitPrice,
+        };
+      }
+      const itemSnapshot = localProduct
+        ? productSnapshot(localProduct)
+        : {
+            id: '',
+            name:
+              (parsed.data as { productName?: string }).productName ??
+              'Producto',
+            brand: null,
+            barcode: null,
+            quantityValue: null,
+            quantityUnit: null,
+          };
+      await putOffline('offline_items', {
+        id,
+        ownerUserId,
+        sessionId,
+        productId: itemInput.productId,
+        productName: itemSnapshot.name,
+        productBrand: itemSnapshot.brand,
+        productBarcode: itemSnapshot.barcode,
+        productQuantityValue: itemSnapshot.quantityValue,
+        productQuantityUnit: itemSnapshot.quantityUnit,
+        quantity: itemInput.quantity,
+        unitPrice: itemInput.unitPrice,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      await enqueueOfflineOperation(
+        makeOfflineOperation(
+          ownerUserId,
+          'shopping_item_create',
+          { sessionId, input: itemInput },
+          { localEntityId: id },
+        ),
+      );
+    };
     try {
       if (mode === 'guest' && guestId) {
         addLocalShoppingItem(
@@ -172,15 +289,84 @@ export function ShoppingItemManager({
           parsed.data,
           product ? productSnapshot(product) : undefined,
         );
+      } else if (!online && ownerUserId) {
+        const id = crypto.randomUUID();
+        let itemInput = parsed.data;
+        if (parsed.data.productId === null) {
+          const productInput = productInputSchema.parse({
+            name: parsed.data.productName,
+            brand: parsed.data.brand,
+            barcode: parsed.data.barcode,
+            quantityValue: parsed.data.quantityValue,
+            quantityUnit: parsed.data.quantityUnit,
+          });
+          const localProductId = crypto.randomUUID();
+          await putOffline('offline_products', {
+            id: localProductId,
+            ownerUserId,
+            ...productInput,
+          });
+          await enqueueOfflineOperation(
+            makeOfflineOperation(ownerUserId, 'product_create', productInput, {
+              localEntityId: localProductId,
+            }),
+          );
+          itemInput = {
+            productId: localProductId,
+            quantity: parsed.data.quantity,
+            unitPrice: parsed.data.unitPrice,
+          };
+        }
+        const snapshot = product
+          ? productSnapshot(product)
+          : {
+              id: '',
+              name:
+                (parsed.data as { productName?: string }).productName ??
+                'Producto',
+              brand: null,
+              barcode: null,
+              quantityValue: null,
+              quantityUnit: null,
+            };
+        await putOffline('offline_items', {
+          id,
+          ownerUserId,
+          sessionId,
+          productId: itemInput.productId,
+          productName: snapshot.name,
+          productBrand: snapshot.brand,
+          productBarcode: snapshot.barcode,
+          productQuantityValue: snapshot.quantityValue,
+          productQuantityUnit: snapshot.quantityUnit,
+          quantity: itemInput.quantity,
+          unitPrice: itemInput.unitPrice,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        await enqueueOfflineOperation(
+          makeOfflineOperation(
+            ownerUserId,
+            'shopping_item_create',
+            { sessionId, input: itemInput },
+            { localEntityId: id },
+          ),
+        );
       } else {
-        const response = await fetch(
-          `/api/shopping-sessions/${sessionId}/items`,
-          {
+        let response: Response;
+        try {
+          response = await fetch(`/api/shopping-sessions/${sessionId}/items`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(parsed.data),
-          },
-        );
+          });
+        } catch (error) {
+          if (error instanceof TypeError && ownerUserId) {
+            await queueAuthenticatedItem();
+            setMessage('Sin conexión: cambio guardado.');
+            response = new Response('{}', { status: 201 });
+          } else throw error;
+        }
         if (!response.ok) {
           const data = await response.json();
           throw new Error(data.error ?? 'No pudimos agregar el ítem.');
@@ -227,13 +413,52 @@ export function ShoppingItemManager({
     try {
       if (mode === 'guest' && guestId)
         updateLocalShoppingItem(guestId, item.id, parsed.data);
-      else {
-        const response = await fetch(`/api/shopping-items/${item.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(parsed.data),
+      else if (!online && ownerUserId) {
+        await putOffline('offline_items', {
+          ...item,
+          ...parsed.data,
+          ownerUserId,
+          sessionId,
+          id: item.id,
+          updatedAt: new Date().toISOString(),
         });
-        if (!response.ok) {
+        await enqueueOfflineOperation(
+          makeOfflineOperation(
+            ownerUserId,
+            'shopping_item_update',
+            { patch: parsed.data, itemId: item.id },
+            { localEntityId: item.id, serverEntityId: item.id },
+          ),
+        );
+      } else {
+        let response: Response | undefined;
+        try {
+          response = await fetch(`/api/shopping-items/${item.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(parsed.data),
+          });
+        } catch (error) {
+          if (!(error instanceof TypeError && ownerUserId)) throw error;
+          await putOffline('offline_items', {
+            ...item,
+            ...parsed.data,
+            ownerUserId,
+            sessionId,
+            id: item.id,
+            updatedAt: new Date().toISOString(),
+          });
+          await enqueueOfflineOperation(
+            makeOfflineOperation(
+              ownerUserId,
+              'shopping_item_update',
+              { patch: parsed.data, itemId: item.id },
+              { localEntityId: item.id, serverEntityId: item.id },
+            ),
+          );
+          setMessage('Sin conexión: cambio guardado.');
+        }
+        if (response && !response.ok) {
           const data = await response.json();
           throw new Error(data.error ?? 'No pudimos actualizar el ítem.');
         }
@@ -256,11 +481,36 @@ export function ShoppingItemManager({
     setMessage('');
     try {
       if (mode === 'guest' && guestId) deleteLocalShoppingItem(guestId, itemId);
-      else {
-        const response = await fetch(`/api/shopping-items/${itemId}`, {
-          method: 'DELETE',
-        });
-        if (!response.ok) {
+      else if (!online && ownerUserId) {
+        await deleteOffline('offline_items', itemId);
+        await enqueueOfflineOperation(
+          makeOfflineOperation(
+            ownerUserId,
+            'shopping_item_delete',
+            { itemId },
+            { localEntityId: itemId, serverEntityId: itemId },
+          ),
+        );
+      } else {
+        let response: Response | undefined;
+        try {
+          response = await fetch(`/api/shopping-items/${itemId}`, {
+            method: 'DELETE',
+          });
+        } catch (error) {
+          if (!(error instanceof TypeError && ownerUserId)) throw error;
+          await deleteOffline('offline_items', itemId);
+          await enqueueOfflineOperation(
+            makeOfflineOperation(
+              ownerUserId,
+              'shopping_item_delete',
+              { itemId },
+              { localEntityId: itemId, serverEntityId: itemId },
+            ),
+          );
+          setMessage('Sin conexión: eliminación guardada.');
+        }
+        if (response && !response.ok) {
           const data = await response.json();
           throw new Error(data.error ?? 'No pudimos eliminar el ítem.');
         }

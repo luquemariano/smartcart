@@ -111,8 +111,12 @@ export async function getShoppingSession(userId: string, sessionId: string) {
   return session;
 }
 
-export async function finishShoppingSession(userId: string, sessionId: string) {
-  return db.transaction(async (tx) => {
+export async function finishShoppingSession(
+  userId: string,
+  sessionId: string,
+  executor: typeof db = db,
+) {
+  return executor.transaction(async (tx) => {
     const [existing] = await tx
       .select()
       .from(shoppingSessions)

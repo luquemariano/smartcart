@@ -115,6 +115,7 @@ export async function addShoppingItem(
   userId: string,
   sessionId: string,
   input: unknown,
+  executor: typeof db = db,
 ) {
   const parsed = shoppingItemInputSchema.parse(input);
   const catalogProduct =
@@ -134,7 +135,7 @@ export async function addShoppingItem(
         parsed as Extract<ShoppingItemInput, { productId: null }>,
       );
   try {
-    return await db.transaction(async (tx) => {
+    return await executor.transaction(async (tx) => {
       const [session] = await tx
         .select()
         .from(shoppingSessions)
@@ -230,6 +231,7 @@ export async function updateShoppingItem(
   userId: string,
   itemId: string,
   input: unknown,
+  executor: typeof db = db,
 ) {
   const parsed = shoppingItemPatchSchema.parse(input);
   const row = await getOwnedItem(userId, itemId);
@@ -241,7 +243,7 @@ export async function updateShoppingItem(
         ? {}
         : { unitPrice: parsed.unitPrice }),
     };
-    const [item] = await db
+    const [item] = await executor
       .update(shoppingItems)
       .set({ ...changes, updatedAt: new Date() })
       .where(eq(shoppingItems.id, itemId))
@@ -253,10 +255,14 @@ export async function updateShoppingItem(
   }
 }
 
-export async function deleteShoppingItem(userId: string, itemId: string) {
+export async function deleteShoppingItem(
+  userId: string,
+  itemId: string,
+  executor: typeof db = db,
+) {
   const row = await getOwnedItem(userId, itemId);
   ensureActiveStatus(row.session.status);
-  await db.delete(shoppingItems).where(eq(shoppingItems.id, itemId));
+  await executor.delete(shoppingItems).where(eq(shoppingItems.id, itemId));
 }
 
 export function addShoppingItemQuantities(left: string, right: string) {

@@ -71,6 +71,13 @@
       "when": 1789341000000,
       "tag": "0009_add-promotions",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789342000000,
+      "tag": "0010_add-client-operations",
+      "breakpoints": true
     }
   ]
 }

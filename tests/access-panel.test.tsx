@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccessPanel } from '@/components/access-panel';
+import { saveOfflineAuthSnapshot } from '@/lib/offline-auth';
 
 const mockedAuthClient = vi.hoisted(() => ({
   useSession: vi.fn(() => ({ data: null, isPending: false })),
@@ -14,6 +15,10 @@ vi.mock('@/lib/auth-client', () => ({ authClient: mockedAuthClient }));
 describe('access panel', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
     vi.stubGlobal(
       'fetch',
       vi.fn(() =>
@@ -67,9 +72,35 @@ describe('access panel', () => {
 
     render(<AccessPanel googleConfigured={false} />);
 
-    expect(screen.getByText('maria@example.com')).toBeInTheDocument();
+    expect(screen.getAllByText('maria@example.com').length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
     expect(mockedAuthClient.signOut).toHaveBeenCalled();
     expect(window.localStorage.getItem('smartcart.guest.identity')).toBeNull();
+  });
+
+  it('restores a known authenticated user offline without attempting sign-in', async () => {
+    const ownerUserId = crypto.randomUUID();
+    await saveOfflineAuthSnapshot({
+      id: ownerUserId,
+      name: 'María',
+      email: 'maria@example.com',
+    });
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: false,
+    });
+    mockedAuthClient.useSession.mockReturnValue({
+      data: null,
+      error: { status: 0 },
+      isPending: false,
+    } as never);
+
+    render(<AccessPanel googleConfigured={false} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Sesión offline')).toBeInTheDocument();
+    });
+    expect(screen.getAllByText('maria@example.com').length).toBeGreaterThan(0);
+    expect(mockedAuthClient.signIn.email).not.toHaveBeenCalled();
   });
 });

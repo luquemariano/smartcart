@@ -6,3 +6,4 @@ export * from './shopping-lists';
 export * from './guest-imports';
 export * from './price-observations';
 export * from './promotions';
+export * from './client-operations';

@@ -25,7 +25,11 @@ Al finalizar una compra con Store, los ítems de catálogo que tienen precio gen
 
 F14 — PriceObservation está completada y validada contra PostgreSQL real. F15 — Comparación de listas entre supermercados también está completada: usa únicamente PriceObservation conocidas, latest por Product+Store, dinero exacto, cobertura explícita, ownership y el mismo calculador para guest. F16 — Promociones / costo real opcional está completada y cerrada.
 
-F16 — Promociones / costo real opcional está completada y validada. Agrega promociones por Product + Store con vigencia, sin alterar PriceObservation; aplica como máximo la mejor promoción individual sobre el último precio conocido, sin stacking, promociones bancarias ni costos de viaje. F17 Offline/PWA continúa pendiente.
+F16 — Promociones / costo real opcional está completada y validada. Agrega promociones por Product + Store con vigencia, sin alterar PriceObservation; aplica como máximo la mejor promoción individual sobre el último precio conocido, sin stacking, promociones bancarias ni costos de viaje.
+
+## F17 — Offline/PWA
+
+La compra autenticada conserva en IndexedDB (`smartcart_offline_v1`, versión 1) la sesión activa, sus ítems y el catálogo necesario. Las operaciones offline se sincronizan al volver online o al pulsar “Reintentar”. `POST /api/offline/sync` valida la sesión, ordena dependencias y usa `client_operations` para idempotencia. Guest mantiene su persistencia local aislada. El Service Worker cachea solo shell/assets/GET y nunca mutaciones.
 
 ## Ejecución con Docker
 

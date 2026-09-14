@@ -14,6 +14,13 @@ import {
 } from '@/lib/barcode-product-flow';
 import { productInputSchema } from '@/lib/product-validation';
 import { shoppingItemInputSchema } from '@/lib/shopping-item-validation';
+import {
+  listOffline,
+  putOffline,
+  enqueueOfflineOperation,
+} from '@/lib/offline-db';
+import { makeOfflineOperation } from '@/lib/offline-sync';
+import { useOnlineStatus } from '@/lib/online-status';
 
 type Mode = 'guest' | 'authenticated';
 type ProductView = Pick<
@@ -54,11 +61,14 @@ export function BarcodeProductAdder({
   mode,
   guestId,
   sessionId,
+  ownerUserId,
 }: {
   mode: Mode;
   guestId?: string | null;
   sessionId: string | null;
+  ownerUserId?: string;
 }) {
+  const online = useOnlineStatus();
   const [scannerOpen, setScannerOpen] = useState(false);
   const [barcode, setBarcode] = useState('');
   const [knownProduct, setKnownProduct] = useState<ProductView | null>(null);
@@ -83,6 +93,13 @@ export function BarcodeProductAdder({
         let product: ProductView | undefined;
         if (mode === 'guest' && guestId) {
           product = findProductByBarcode(listLocalProducts(guestId), code);
+        } else if (!online && ownerUserId) {
+          product = (
+            await listOffline<ProductView & { ownerUserId: string }>(
+              'offline_products',
+              (candidate) => candidate.ownerUserId === ownerUserId,
+            )
+          ).find((candidate) => candidate.barcode === code);
         } else {
           const response = await fetch(
             `/api/products?q=${encodeURIComponent(code)}`,
@@ -113,7 +130,7 @@ export function BarcodeProductAdder({
         );
       }
     },
-    [guestId, mode, sessionId],
+    [guestId, mode, online, ownerUserId, sessionId],
   );
 
   async function addProduct() {
@@ -140,6 +157,22 @@ export function BarcodeProductAdder({
           );
         if (mode === 'guest' && guestId) {
           product = createLocalProduct(guestId, parsedProduct.data);
+        } else if (!online && ownerUserId) {
+          const localId = crypto.randomUUID();
+          product = { ...parsedProduct.data, id: localId };
+          await putOffline('offline_products', {
+            ...product,
+            ownerUserId,
+            id: localId,
+          });
+          await enqueueOfflineOperation(
+            makeOfflineOperation(
+              ownerUserId,
+              'product_create',
+              parsedProduct.data,
+              { localEntityId: localId },
+            ),
+          );
         } else {
           const response = await fetch('/api/products', {
             method: 'POST',
@@ -170,6 +203,26 @@ export function BarcodeProductAdder({
           parsedItem.data,
           snapshot(product),
         );
+      } else if (!online && ownerUserId) {
+        const localItemId = crypto.randomUUID();
+        await enqueueOfflineOperation(
+          makeOfflineOperation(
+            ownerUserId,
+            'shopping_item_create',
+            { sessionId, input: parsedItem.data },
+            { localEntityId: localItemId },
+          ),
+        );
+        await putOffline('offline_items', {
+          ownerUserId,
+          sessionId,
+          ...snapshot(product),
+          id: localItemId,
+          quantity: parsedItem.data.quantity,
+          unitPrice: parsedItem.data.unitPrice,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
       } else {
         const response = await fetch(
           `/api/shopping-sessions/${sessionId}/items`,

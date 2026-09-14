@@ -335,3 +335,10 @@
 - **Reglas:** percentage, fixed_price y buy_n_pay_m usan dinero exacto; N x M solo aplica a cantidades enteras. Promociones futuras, expiradas o inactivas permanecen almacenadas pero no aplican.
 - **Fuera de alcance:** promociones bancarias, reintegros, costos de viaje, scraping y offline.
 - **Estado:** aprobada y cerrada para F16.
+
+## ADR-049 — Offline autenticado acotado a la compra activa
+
+- **Decisión:** IndexedDB `smartcart_offline_v1` version 1 conserva snapshots namespaced por usuario y una cola limitada; el servidor sigue siendo autoridad.
+- **Decisión:** `/api/offline/sync` valida ownership desde la sesión y usa `client_operations` con unique `(owner_user_id, operation_id)` para reintentos idempotentes.
+- **Consecuencias:** conflictos quedan persistidos; no se usa Background Sync, no se mutan Promotions offline y Guest no comparte datos con auth.
+- **Estado:** técnicamente validada en F17; cierre requiere prueba manual offline.
