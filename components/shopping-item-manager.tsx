@@ -144,22 +144,35 @@ export function ShoppingItemManager({
     }
     if (mode === 'authenticated') {
       try {
-        const [productsResponse, itemsResponse] = await Promise.all([
-          fetch('/api/products'),
-          fetch(`/api/shopping-sessions/${sessionId}/items`),
+        const productsRequest = fetch('/api/products').then(
+          async (productsResponse) => {
+            const productsData = await productsResponse.json();
+            if (!productsResponse.ok)
+              throw new Error('No pudimos cargar los productos.');
+            const nextProducts = productsData.products ?? [];
+            if (ownerUserId)
+              for (const product of nextProducts)
+                await putOffline('offline_products', {
+                  ...product,
+                  id: product.id,
+                  ownerUserId,
+                });
+            setProducts(nextProducts);
+            return productsData;
+          },
+        );
+        const itemsRequest = fetch(
+          `/api/shopping-sessions/${sessionId}/items`,
+        ).then(async (itemsResponse) => {
+          const itemsData = await itemsResponse.json();
+          if (!itemsResponse.ok)
+            throw new Error('No pudimos cargar los ítems.');
+          return itemsData;
+        });
+        const [, itemsData] = await Promise.all([
+          productsRequest,
+          itemsRequest,
         ]);
-        const productsData = await productsResponse.json();
-        const itemsData = await itemsResponse.json();
-        if (!productsResponse.ok || !itemsResponse.ok)
-          throw new Error('No pudimos cargar los ítems.');
-        setProducts(productsData.products ?? []);
-        if (mode === 'authenticated' && ownerUserId)
-          for (const product of productsData.products ?? [])
-            await putOffline('offline_products', {
-              ...product,
-              id: product.id,
-              ownerUserId,
-            });
         setItems(itemsData.items ?? []);
         if (mode === 'authenticated' && ownerUserId)
           for (const item of itemsData.items ?? [])
