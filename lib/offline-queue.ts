@@ -13,7 +13,7 @@ export function orderOfflineOperations(operations: OfflineOperation[]) {
   };
   return [...operations].sort(
     (a, b) =>
-      a.createdAt.localeCompare(b.createdAt) || rank[a.type] - rank[b.type],
+      rank[a.type] - rank[b.type] || a.createdAt.localeCompare(b.createdAt),
   );
 }
 

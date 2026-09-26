@@ -20,14 +20,26 @@ import { createProduct } from '@/server/products';
 import { createStore } from '@/server/stores';
 import { startShoppingSession } from '@/server/shopping-sessions';
 import { POST } from '@/app/api/offline/sync/route';
+import { orderOfflineOperations } from '@/lib/offline-queue';
+import type { OfflineOperation } from '@/lib/offline-types';
 
 const owner = auth.user.id;
 const id = () => crypto.randomUUID();
 const op = (
-  type: string,
+  type: OfflineOperation['type'],
   payload: Record<string, unknown>,
-  extra: Record<string, unknown> = {},
-) => ({ clientOperationId: id(), type, payload, ...extra });
+  extra: Partial<OfflineOperation> = {},
+): OfflineOperation => ({
+  id: id(),
+  ownerUserId: owner,
+  clientOperationId: id(),
+  type,
+  payload,
+  createdAt: new Date().toISOString(),
+  retryCount: 0,
+  status: 'pending',
+  ...extra,
+});
 
 describe.skipIf(!process.env.DATABASE_URL)(
   'F17 offline sync PostgreSQL',
@@ -37,7 +49,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
     let sessionId: string;
     let itemLocalId: string;
     let productLocalId: string;
-    let batch: Array<Record<string, unknown>>;
+    let batch: OfflineOperation[];
 
     beforeAll(async () => {
       const store = await createStore(owner, {
@@ -65,17 +77,33 @@ describe.skipIf(!process.env.DATABASE_URL)(
       productLocalId = id();
       batch = [
         op(
+          'shopping_session_finish',
+          { sessionId },
+          { createdAt: '2020-01-01T00:00:00.000Z' },
+        ),
+        op(
+          'shopping_item_update',
+          {
+            itemId: itemLocalId,
+            patch: { quantity: '2', unitPrice: '110.00' },
+          },
+          {
+            localEntityId: itemLocalId,
+            serverEntityId: itemLocalId,
+            createdAt: '2020-01-01T00:00:01.000Z',
+          },
+        ),
+        op(
           'shopping_item_create',
           {
             sessionId,
             input: { productId, quantity: '1', unitPrice: '100.00' },
           },
-          { localEntityId: itemLocalId },
+          {
+            localEntityId: itemLocalId,
+            createdAt: '2020-01-01T00:00:02.000Z',
+          },
         ),
-        op('shopping_item_update', {
-          itemId: itemLocalId,
-          patch: { quantity: '2', unitPrice: '110.00' },
-        }),
         op(
           'product_create',
           {
@@ -85,7 +113,10 @@ describe.skipIf(!process.env.DATABASE_URL)(
             quantityValue: null,
             quantityUnit: null,
           },
-          { localEntityId: productLocalId },
+          {
+            localEntityId: productLocalId,
+            createdAt: '2020-01-01T00:00:03.000Z',
+          },
         ),
         op(
           'shopping_item_create',
@@ -97,9 +128,11 @@ describe.skipIf(!process.env.DATABASE_URL)(
               unitPrice: '25.50',
             },
           },
-          { localEntityId: id() },
+          {
+            localEntityId: id(),
+            createdAt: '2020-01-01T00:00:04.000Z',
+          },
         ),
-        op('shopping_session_finish', { sessionId }),
       ];
     });
 
@@ -120,28 +153,42 @@ describe.skipIf(!process.env.DATABASE_URL)(
       await db.delete(stores).where(eq(stores.ownerUserId, owner));
     });
 
-    it('applies the batch atomically, maps local item/product IDs and makes retry idempotent', async () => {
+    it('maps local item IDs before updates and finishes after every queued change', async () => {
+      const orderedBatch = orderOfflineOperations(batch);
       const request = () =>
         new Request('http://localhost/api/offline/sync', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ operations: batch }),
+          body: JSON.stringify({ operations: orderedBatch }),
         });
       const first = await POST(request());
       expect(first.status).toBe(200);
+      const firstBody = await first.json();
       expect(
-        (await first.json()).results.every(
+        firstBody.results.every(
           (result: { status: string }) => result.status === 'applied',
         ),
       ).toBe(true);
+      expect(orderedBatch.at(-1)?.type).toBe('shopping_session_finish');
+      const itemCreate = orderedBatch.find(
+        (operation) => operation.type === 'shopping_item_create',
+      );
+      const mappedItemId = firstBody.results.find(
+        (result: { clientOperationId: string }) =>
+          result.clientOperationId === itemCreate?.clientOperationId,
+      )?.serverEntityId;
+      expect(mappedItemId).toBeTruthy();
       const firstItems = await db
         .select()
         .from(shoppingItems)
         .where(eq(shoppingItems.shoppingSessionId, sessionId));
       expect(firstItems).toHaveLength(2);
-      expect(
-        firstItems.find((item) => item.productId === productId)?.quantity,
-      ).toBe('2.000');
+      const updatedItem = firstItems.find(
+        (item) => item.productId === productId,
+      );
+      expect(updatedItem?.id).toBe(mappedItemId);
+      expect(updatedItem?.quantity).toBe('2.000');
+      expect(updatedItem?.unitPrice).toBe('110.00');
       expect(
         (
           await db
@@ -150,12 +197,15 @@ describe.skipIf(!process.env.DATABASE_URL)(
             .where(eq(shoppingSessions.id, sessionId))
         )[0].status,
       ).toBe('completed');
+      const observations = await db
+        .select()
+        .from(priceObservations)
+        .where(eq(priceObservations.ownerUserId, owner));
+      expect(observations).toHaveLength(2);
       expect(
-        await db
-          .select()
-          .from(priceObservations)
-          .where(eq(priceObservations.ownerUserId, owner)),
-      ).toHaveLength(2);
+        observations.find((observation) => observation.productId === productId)
+          ?.unitPrice,
+      ).toBe('110.00');
       const second = await POST(request());
       expect(
         (await second.json()).results.every(

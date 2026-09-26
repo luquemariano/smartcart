@@ -50,7 +50,9 @@ export function OfflineStatus({ ownerUserId }: { ownerUserId?: string }) {
     >
       <span>
         {!online
-          ? 'Sin conexión'
+          ? pending
+            ? `Sin conexión · Cambios pendientes (${pending})`
+            : 'Sin conexión'
           : syncing
             ? 'Sincronizando…'
             : error

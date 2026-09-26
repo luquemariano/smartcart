@@ -24,13 +24,15 @@ describe('offline queue', () => {
   it('orders product/item/finish dependencies', () =>
     expect(
       orderOfflineOperations([
-        operation('shopping_session_finish', '3'),
-        operation('shopping_item_create', '2'),
-        operation('product_create', '1'),
+        operation('shopping_session_finish', '0'),
+        operation('shopping_item_update', '2'),
+        operation('shopping_item_create', '3'),
+        operation('product_create', '4'),
       ]).map((x) => x.type),
     ).toEqual([
       'product_create',
       'shopping_item_create',
+      'shopping_item_update',
       'shopping_session_finish',
     ]));
   it('compacts create/update and cancels local create/delete', () => {

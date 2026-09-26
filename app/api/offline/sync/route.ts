@@ -108,24 +108,26 @@ export async function POST(request: Request) {
           ).id;
           if (operation.localEntityId)
             localItems.set(operation.localEntityId, entityId);
-        } else if (operation.type === 'shopping_item_update')
+        } else if (operation.type === 'shopping_item_update') {
+          const localItemId = operation.payload.itemId as string;
           await updateShoppingItem(
             session.user.id,
-            operation.serverEntityId ??
-              localItems.get(operation.payload.itemId as string) ??
-              (operation.payload.itemId as string),
+            localItems.get(localItemId) ??
+              operation.serverEntityId ??
+              localItemId,
             operation.payload.patch,
             executor,
           );
-        else if (operation.type === 'shopping_item_delete')
+        } else if (operation.type === 'shopping_item_delete') {
+          const localItemId = operation.payload.itemId as string;
           await deleteShoppingItem(
             session.user.id,
-            operation.serverEntityId ??
-              localItems.get(operation.payload.itemId as string) ??
-              (operation.payload.itemId as string),
+            localItems.get(localItemId) ??
+              operation.serverEntityId ??
+              localItemId,
             executor,
           );
-        else
+        } else
           await finishShoppingSession(
             session.user.id,
             operation.payload.sessionId as string,

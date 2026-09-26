@@ -1,20 +1,23 @@
 import {
   fireEvent,
+  cleanup,
   render,
   screen,
   waitFor,
   within,
 } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ShoppingItemManager } from '@/components/shopping-item-manager';
 import { createLocalProduct } from '@/lib/local-product-repository';
 import {
   finishLocalShoppingSession,
   startLocalShoppingSession,
 } from '@/lib/local-shopping-session-repository';
+import { listOffline, listPendingOfflineOperations } from '@/lib/offline-db';
 
 describe('shopping item manager', () => {
   beforeEach(() => window.localStorage.clear());
+  afterEach(() => cleanup());
 
   it('adds catalog/manual items, merges catalog quantities and lists completed items', async () => {
     const product = createLocalProduct('guest-ui-items', {
@@ -104,5 +107,100 @@ describe('shopping item manager', () => {
     expect(
       screen.queryByRole('button', { name: 'Eliminar' }),
     ).not.toBeInTheDocument();
+  });
+
+  it('keeps a fetched catalog product selectable and queues its item if session loading loses connectivity', async () => {
+    const ownerUserId = crypto.randomUUID();
+    const sessionId = crypto.randomUUID();
+    const product = {
+      id: crypto.randomUUID(),
+      name: 'Yogur',
+      brand: 'Prueba',
+      barcode: null,
+      quantityValue: '1',
+      quantityUnit: 'l',
+    };
+    const originalOnline = navigator.onLine;
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input) === '/api/products')
+          return new Response(JSON.stringify({ products: [product] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        throw new TypeError('Failed to fetch');
+      }),
+    );
+
+    try {
+      render(
+        <ShoppingItemManager
+          mode="authenticated"
+          ownerUserId={ownerUserId}
+          sessionId={sessionId}
+          status="active"
+        />,
+      );
+
+      const cachedProducts = await waitFor(async () => {
+        const cached = await listOffline<
+          typeof product & { ownerUserId: string }
+        >(
+          'offline_products',
+          (candidate) => candidate.ownerUserId === ownerUserId,
+        );
+        expect(cached).toHaveLength(1);
+        return cached;
+      });
+      expect(cachedProducts[0]).toMatchObject(product);
+      expect(
+        await screen.findByRole('option', { name: 'Yogur' }),
+      ).toBeInTheDocument();
+
+      Object.defineProperty(navigator, 'onLine', {
+        configurable: true,
+        value: false,
+      });
+      window.dispatchEvent(new Event('offline'));
+      fireEvent.change(screen.getByLabelText('Producto del catálogo'), {
+        target: { value: product.id },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Agregar producto' }));
+
+      expect(await screen.findByText('Cantidad: 1')).toBeInTheDocument();
+      await waitFor(async () => {
+        const pending = await listPendingOfflineOperations(ownerUserId);
+        expect(pending).toHaveLength(1);
+        expect(pending[0]).toMatchObject({
+          type: 'shopping_item_create',
+          payload: {
+            sessionId,
+            input: { productId: product.id, quantity: '1', unitPrice: null },
+          },
+        });
+      });
+      await expect(
+        listOffline<{
+          ownerUserId: string;
+          sessionId: string;
+          productName: string;
+        }>(
+          'offline_items',
+          (item) =>
+            item.ownerUserId === ownerUserId && item.sessionId === sessionId,
+        ),
+      ).resolves.toMatchObject([{ productName: 'Yogur' }]);
+    } finally {
+      Object.defineProperty(navigator, 'onLine', {
+        configurable: true,
+        value: originalOnline,
+      });
+      vi.unstubAllGlobals();
+    }
   });
 });
