@@ -1,0 +1,46 @@
+name: Verify
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: smartcart
+          POSTGRES_USER: smartcart
+          POSTGRES_PASSWORD: smartcart_test_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U smartcart -d smartcart"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://smartcart:smartcart_test_only@localhost:5432/smartcart
+      BETTER_AUTH_SECRET: smartcart-ci-test-secret-not-for-production
+      BETTER_AUTH_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run auth:migrate
+      - run: npm run db:migrate
+      - run: npm run verify

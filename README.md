@@ -1,6 +1,6 @@
 # SmartCart
 
-SmartCart es un asistente personal de compras que busca ayudar a saber cuánto se lleva gastado antes de llegar a la caja. El proyecto se encuentra en **F15 — Comparación de listas entre supermercados** (completada y cerrada).
+SmartCart es un asistente personal de compras que busca ayudar a saber cuánto se lleva gastado antes de llegar a la caja. F17 — Offline/PWA está implementada y técnicamente validada; queda pendiente la prueba manual offline en navegador descrita en [`docs/F17-MANUAL-OFFLINE.md`](./docs/F17-MANUAL-OFFLINE.md).
 
 ## Requisitos
 
@@ -54,7 +54,10 @@ npm test
 npm run auth:migrate
 npm run db:generate
 npm run db:migrate
+npm run verify
 ```
+
+El workflow autónomo local, la estrategia de validación y los límites de seguridad están documentados en [`docs/WORKFLOW.md`](./docs/WORKFLOW.md), [`docs/TESTING.md`](./docs/TESTING.md) y [`docs/SECURITY.md`](./docs/SECURITY.md). `npm run verify` ejecuta formato check, typecheck, lint, tests y build. Para incluir pruebas PostgreSQL reales se requiere `DATABASE_URL` con el esquema migrado; ver `docs/TESTING.md`. GitHub Actions corre las mismas verificaciones en pull requests y pushes a `main`.
 
 Los tests cubren identidad local, estados de acceso, formulario email, supermercados, productos guest, validación, barcode, conversiones exactas, dinero decimal, subtotales/resúmenes, comparación histórica exacta, historial derivado, sesiones guest con presupuesto, ítems guest y UI de listado/alta/búsqueda/selección/inicio/ítems/edición/finalización/detalle readonly. El CRUD autenticado, búsqueda, sesiones, presupuesto, ítems, snapshots, precios, historial, deduplicación segura, aislamiento entre usuarios y protección de Store/Product referenciados se verifican contra PostgreSQL en Docker. No se intenta probar OAuth real.
 
