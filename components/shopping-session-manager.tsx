@@ -224,17 +224,8 @@ export function ShoppingSessionManager({
           active.id,
           parsed.data.budgetAmount,
         );
-      } else if (!online && ownerUserId) {
-        await enqueueOfflineOperation(
-          makeOfflineOperation(
-            ownerUserId,
-            'shopping_session_finish',
-            { sessionId: active.id },
-            { serverEntityId: active.id },
-          ),
-        );
-        setMessage('La compra se finalizará cuando vuelva la conexión.');
-        setBusy(false);
+      } else if (!online) {
+        setMessage('El presupuesto requiere conexión a internet.');
         return;
       } else {
         const response = await fetch(`/api/shopping-sessions/${active.id}`, {
@@ -269,13 +260,42 @@ export function ShoppingSessionManager({
     try {
       if (mode === 'guest' && guestId) {
         finishLocalShoppingSession(guestId, active.id);
+      } else if (!online && ownerUserId) {
+        await enqueueOfflineOperation(
+          makeOfflineOperation(
+            ownerUserId,
+            'shopping_session_finish',
+            { sessionId: active.id },
+            { serverEntityId: active.id },
+          ),
+        );
+        setMessage(
+          'La finalización quedó guardada en este dispositivo y se sincronizará al volver la conexión.',
+        );
+        return;
       } else {
-        const response = await fetch(`/api/shopping-sessions/${active.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'completed' }),
-        });
-        if (!response.ok) throw new Error('No pudimos finalizar la compra.');
+        try {
+          const response = await fetch(`/api/shopping-sessions/${active.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'completed' }),
+          });
+          if (!response.ok) throw new Error('No pudimos finalizar la compra.');
+        } catch (error) {
+          if (!(error instanceof TypeError && ownerUserId)) throw error;
+          await enqueueOfflineOperation(
+            makeOfflineOperation(
+              ownerUserId,
+              'shopping_session_finish',
+              { sessionId: active.id },
+              { serverEntityId: active.id },
+            ),
+          );
+          setMessage(
+            'La finalización quedó guardada en este dispositivo y se sincronizará al volver la conexión.',
+          );
+          return;
+        }
       }
       setBudgetEditOpen(false);
       await load();

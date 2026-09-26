@@ -46,6 +46,28 @@ export async function syncOfflineOperations(
   });
   if (!response.ok) throw new Error('No se pudo sincronizar la compra.');
   const results = (await response.json()).results as SyncResult[];
+  const serverEntityIds = new Map<string, string>();
+  for (const result of results) {
+    if (!result.serverEntityId) continue;
+    const operation = operations.find(
+      (candidate) => candidate.clientOperationId === result.clientOperationId,
+    );
+    if (operation?.type === 'shopping_item_create' && operation.localEntityId)
+      serverEntityIds.set(operation.localEntityId, result.serverEntityId);
+  }
+
+  for (const operation of operations) {
+    if (
+      (operation.type !== 'shopping_item_update' &&
+        operation.type !== 'shopping_item_delete') ||
+      !operation.localEntityId
+    )
+      continue;
+    const serverEntityId = serverEntityIds.get(operation.localEntityId);
+    if (serverEntityId && operation.serverEntityId !== serverEntityId)
+      await putOffline('offline_operations', { ...operation, serverEntityId });
+  }
+
   for (const result of results) {
     const operation = operations.find(
       (candidate) => candidate.clientOperationId === result.clientOperationId,
@@ -53,13 +75,20 @@ export async function syncOfflineOperations(
     if (!operation) continue;
     if (result.status === 'applied' || result.status === 'already_applied')
       await deleteOffline('offline_operations', operation.id);
-    else
+    else {
+      const mappedServerEntityId = operation.localEntityId
+        ? serverEntityIds.get(operation.localEntityId)
+        : undefined;
       await putOffline('offline_operations', {
         ...operation,
+        ...(mappedServerEntityId
+          ? { serverEntityId: mappedServerEntityId }
+          : {}),
         status: result.status,
         retryCount: operation.retryCount + 1,
         lastError: result.errorCode ?? 'SYNC_ERROR',
       });
+    }
   }
   return results;
 }
