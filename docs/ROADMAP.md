@@ -1,6 +1,6 @@
 # SmartCart — Roadmap
 
-Las fases son pequeñas y verificables. F16 es la última fase cerrada; F17 está técnicamente validada y espera la prueba manual offline del usuario.
+Las fases son pequeñas y verificables. F17 está implementada y técnicamente validada; su prueba manual offline en navegador sigue pendiente según `docs/F17-MANUAL-OFFLINE.md`.
 
 ## F0 — Foundation
 
@@ -157,6 +157,8 @@ Promociones por Product + Store con vigencia, CRUD autenticado, repositorio gues
 
 ## F17 — Offline/PWA robusta
 
+- **Estado:** implementada y técnicamente validada; pendiente prueba manual offline en navegador.
+
 - **Objetivo:** soportar IndexedDB, cola local, sincronización y resolución de conflictos.
 - **Entregables:** persistencia offline, reintentos, sincronización y conflictos explícitos.
 - **Dependencias:** F14.
@@ -192,6 +194,6 @@ Historial normalizado de precios de Products por Store y fecha, generado al fina
 
 Compara una ShoppingList entre Stores propios usando únicamente PriceObservation conocidas y latest por Product+Store. Mantiene dinero exacto, cantidades decimales, cobertura y faltantes explícitos; los ítems manuales quedan fuera del total. El ganador requiere al menos dos Stores completos, y guest reutiliza el mismo calculador.
 
-### F17 — Offline/PWA
+### F17 — Offline/PWA (implementada)
 
-Compra autenticada offline con IndexedDB, cola idempotente, reconciliación al volver online y Service Worker mínimo. Guest conserva su flujo local. El cierre requiere validación PostgreSQL real y prueba manual offline.
+Compra autenticada offline con IndexedDB, cola idempotente, reconciliación al volver online y Service Worker mínimo. Guest conserva su flujo local. La validación técnica contra PostgreSQL está documentada; el cierre requiere completar el checklist manual offline en `docs/F17-MANUAL-OFFLINE.md`.

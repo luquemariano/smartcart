@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-**F16 — Promociones / costo real opcional (completada y cerrada).** HEAD: `a200c15`. F14 y F15 permanecen completadas y cerradas; F17 todavía no fue iniciada.
+**F17 — Offline/PWA (implementada y técnicamente validada; prueba manual offline pendiente).** HEAD base inspeccionado: `3697c6b` (`wip: advance F17 offline pwa`); rama de trabajo: `chore/autonomous-workflow`. F14, F15 y F16 permanecen completadas y cerradas.
 
 ## Qué existe hoy
 
@@ -86,7 +86,7 @@ El producto inicial es un asistente personal de compra, no un comparador general
 
 ## Siguiente fase
 
-La siguiente fase es **F17 — Offline/PWA robusta**. F17 todavía no fue iniciada.
+La implementación de F17 y su validación técnica están documentadas al final de este archivo. Su cierre queda sujeto al checklist manual offline en `docs/F17-MANUAL-OFFLINE.md`. La fase posterior es F18; su alcance incluye QA funcional y trabajo de producción, que queda fuera de este workflow autónomo local.
 
 ## Instrucción de continuidad
 
